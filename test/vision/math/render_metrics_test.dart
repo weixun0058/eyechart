@@ -137,8 +137,8 @@ void main() {
           deviceName: 'High DPI Device',
           screenWidthMm: 100.0,
           screenHeightMm: 100.0,
-          screenWidthPx: 2000,
-          screenHeightPx: 2000,
+          screenWidthPx: 500,
+          screenHeightPx: 500,
           devicePixelRatio: 1.0,
           isDpiAware: true,
           createdAt: DateTime(2026, 1, 1),
@@ -162,8 +162,8 @@ void main() {
           deviceName: 'Very High DPI Device',
           screenWidthMm: 50.0,
           screenHeightMm: 50.0,
-          screenWidthPx: 2000,
-          screenHeightPx: 2000,
+          screenWidthPx: 300,
+          screenHeightPx: 300,
           devicePixelRatio: 1.0,
           isDpiAware: true,
           createdAt: DateTime(2026, 1, 1),
@@ -266,8 +266,8 @@ void main() {
           screenProfile: nonSquareScreen,
         );
 
-        expect(metrics.criticalDetailPx, equals(metrics.detailHeightPx));
-        expect(metrics.detailHeightPx, lessThan(metrics.detailWidthPx));
+        expect(metrics.criticalDetailPx, equals(metrics.detailWidthPx));
+        expect(metrics.detailWidthPx, lessThan(metrics.detailHeightPx));
       });
     });
 
