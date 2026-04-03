@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../vision/domain/vision_models.dart';
+import '../../app/providers/app_providers.dart';
 import '../../app/providers/device_config_provider.dart';
 
 class DeviceConfigPage extends ConsumerStatefulWidget {
@@ -70,12 +73,29 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
 
     if (mounted) {
       if (success) {
+        final now = DateTime.now();
+        final screenProfile = ScreenProfile(
+          id: 'screen-${now.millisecondsSinceEpoch}',
+          deviceName: _deviceNameController.text.trim().isEmpty
+              ? '当前设备'
+              : _deviceNameController.text.trim(),
+          screenWidthMm: double.parse(_widthController.text),
+          screenHeightMm: double.parse(_heightController.text),
+          screenWidthPx: config.screenWidthPx,
+          screenHeightPx: config.screenHeightPx,
+          devicePixelRatio: config.devicePixelRatio,
+          isDpiAware: true,
+          createdAt: now,
+          updatedAt: now,
+        );
+        ref.read(screenProfileProvider.notifier).state = screenProfile;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('设备配置已保存'),
             backgroundColor: Colors.green,
           ),
         );
+        context.go('/prepare');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

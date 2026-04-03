@@ -22,7 +22,19 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/test',
       name: 'test',
-      builder: (context, state) => const TestRunPage(),
+      builder: (context, state) {
+        final config = state.extra as TestConfig?;
+        if (config == null) {
+          return _buildInvalidArgumentPage(
+            context,
+            title: '参数错误',
+            message: '测试配置缺失，请返回测试准备页重新开始。',
+            backPath: '/prepare',
+            buttonLabel: '返回准备页',
+          );
+        }
+        return TestRunPage(config: config);
+      },
     ),
     GoRoute(
       path: '/result',
@@ -66,3 +78,40 @@ final GoRouter appRouter = GoRouter(
     ),
   ),
 );
+
+Widget _buildInvalidArgumentPage(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String backPath,
+  required String buttonLabel,
+}) {
+  return Scaffold(
+    appBar: AppBar(
+      title: Text(title),
+      centerTitle: true,
+    ),
+    body: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.warning_amber_outlined, size: 56, color: Colors.orange),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => context.go(backPath),
+              child: Text(buttonLabel),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}

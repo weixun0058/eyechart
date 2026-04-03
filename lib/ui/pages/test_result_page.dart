@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../app/test_session_controller.dart';
 import '../../vision/domain/vision_models.dart';
 import '../../vision/domain/vision_enums.dart';
-import '../../app/providers/app_providers.dart';
 import '../../app/result_interpreter.dart';
 
 class TestResultPage extends ConsumerWidget {
-  const TestResultPage({super.key});
+  final EyeTestResult? result;
+
+  const TestResultPage({
+    super.key,
+    this.result,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(testSessionProvider);
-    final screenProfile = ref.watch(screenProfileProvider);
-    final theme = Theme.of(context);
+    final sessionState = ref.watch(testSessionControllerProvider);
+    final currentResult = result;
 
-    if (session == null) {
+    if (currentResult == null) {
       return _buildNoResultPage(context);
     }
 
@@ -30,11 +34,9 @@ class TestResultPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ...session.eyeResults.map(
-              (result) => _buildResultCard(context, result, session, screenProfile),
-            ),
+            _buildResultCard(context, currentResult),
             const SizedBox(height: 16),
-            _buildSessionInfoCard(context, session),
+            _buildSessionInfoCard(context, currentResult, sessionState),
             const SizedBox(height: 16),
             _buildDisclaimerCard(context),
             const SizedBox(height: 24),
@@ -86,10 +88,7 @@ class TestResultPage extends ConsumerWidget {
   Widget _buildResultCard(
     BuildContext context,
     EyeTestResult result,
-    TestSession session,
-    ScreenProfile? screenProfile,
   ) {
-    final theme = Theme.of(context);
     final displayData = ResultDisplayData.fromResult(result);
     final confidence = displayData.confidence;
 
@@ -360,8 +359,19 @@ class TestResultPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildSessionInfoCard(BuildContext context, TestSession session) {
+  Widget _buildSessionInfoCard(
+    BuildContext context,
+    EyeTestResult result,
+    TestSessionState? sessionState,
+  ) {
     final theme = Theme.of(context);
+    final durationText = _buildDurationText(sessionState);
+    final distanceText = sessionState == null
+        ? '--'
+        : ResultInterpreter.formatTestDistance(sessionState.config.testDistanceMm);
+    final endReasonText = sessionState?.endReason == null
+        ? '--'
+        : ResultInterpreter.getEndReasonLabel(sessionState!.endReason!);
 
     return Card(
       child: Padding(
@@ -380,52 +390,57 @@ class TestResultPage extends ConsumerWidget {
               context,
               icon: Icons.quiz_outlined,
               label: '题量',
-              value: '${session.eyeResults.first.totalQuestions} 题',
+              value: '${result.totalQuestions} 题',
             ),
             const SizedBox(height: 12),
             _buildInfoRow(
               context,
               icon: Icons.check_circle_outline,
               label: '正确率',
-              value: ResultInterpreter.formatAccuracy(session.eyeResults.first.accuracy),
+              value: ResultInterpreter.formatAccuracy(result.accuracy),
             ),
             const SizedBox(height: 12),
             _buildInfoRow(
               context,
               icon: Icons.straighten,
               label: '测试距离',
-              value: ResultInterpreter.formatTestDistance(session.config.testDistanceMm),
+              value: distanceText,
             ),
             const SizedBox(height: 12),
             _buildInfoRow(
               context,
               icon: Icons.timer_outlined,
               label: '平均响应',
-              value: ResultInterpreter.formatResponseTime(
-                session.eyeResults.first.meanResponseTimeMs,
-              ),
+              value: ResultInterpreter.formatResponseTime(result.meanResponseTimeMs),
             ),
             const SizedBox(height: 12),
             _buildInfoRow(
               context,
               icon: Icons.schedule,
               label: '测试时长',
-              value: ResultInterpreter.formatDuration(
-                session.startedAt,
-                session.finishedAt,
-              ),
+              value: durationText,
             ),
             const SizedBox(height: 12),
             _buildInfoRow(
               context,
               icon: Icons.flag_outlined,
               label: '结束原因',
-              value: ResultInterpreter.getEndReasonLabel(session.endReason),
+              value: endReasonText,
             ),
           ],
         ),
       ),
     );
+  }
+
+  String _buildDurationText(TestSessionState? sessionState) {
+    if (sessionState == null || sessionState.questions.isEmpty) {
+      return '--';
+    }
+
+    final startAt = sessionState.questions.first.shownAt;
+    final endAt = sessionState.questions.last.answeredAt;
+    return ResultInterpreter.formatDuration(startAt, endAt);
   }
 
   Widget _buildInfoRow(
@@ -509,7 +524,7 @@ class TestResultPage extends ConsumerWidget {
           height: 50,
           child: ElevatedButton.icon(
             onPressed: () {
-              ref.read(testSessionNotifierProvider.notifier).clearSession();
+              ref.read(testSessionControllerProvider.notifier).clearSession();
               context.go('/prepare');
             },
             icon: const Icon(Icons.refresh),
@@ -544,7 +559,7 @@ class TestResultPage extends ConsumerWidget {
           height: 50,
           child: TextButton.icon(
             onPressed: () {
-              ref.read(testSessionNotifierProvider.notifier).clearSession();
+              ref.read(testSessionControllerProvider.notifier).clearSession();
               context.go('/');
             },
             icon: const Icon(Icons.home_outlined),

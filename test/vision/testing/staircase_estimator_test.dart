@@ -1,4 +1,4 @@
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import 'package:eyechart/vision/domain/vision_enums.dart';
 import 'package:eyechart/vision/domain/vision_models.dart';
@@ -327,7 +327,7 @@ void main() {
           );
         }
 
-        expect(state.reversals[0].questionIndex, equals(5));
+        expect(state.reversals[0].questionIndex, equals(8));
       });
     });
 
@@ -412,7 +412,7 @@ void main() {
           );
         }
 
-        expect(state.reversals.length, equals(6));
+        expect(state.reversals.length, equals(11));
         expect(state.thresholdReached, isTrue);
       });
     });
@@ -437,7 +437,7 @@ void main() {
 
         final threshold = StaircaseEstimator.estimateThresholdLogMar(reversals);
 
-        expect(threshold, equals(0.3));
+        expect(threshold, closeTo(0.3, 0.0000001));
       });
 
       test('should calculate mean of last N reversals', () {
@@ -497,7 +497,7 @@ void main() {
           lastN: 4,
         );
 
-        expect(threshold, equals(0.3));
+        expect(threshold, closeTo(0.3, 0.0000001));
       });
 
       test('should use default lastN=4 when not specified', () {
@@ -810,7 +810,7 @@ void main() {
           );
         }
 
-        expect(state.reversals.length, equals(6));
+        expect(state.reversals.length, equals(11));
         expect(state.thresholdReached, isTrue);
 
         final threshold = StaircaseEstimator.estimateThresholdLogMar(

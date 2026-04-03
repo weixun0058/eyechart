@@ -5,7 +5,6 @@ import '../vision/domain/vision_enums.dart';
 import '../vision/domain/vision_models.dart';
 import '../vision/math/vision_math.dart';
 import '../vision/testing/staircase_estimator.dart';
-import 'providers/app_providers.dart';
 
 class TestSessionState {
   final TestConfig config;
@@ -102,7 +101,7 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
   }
 
   OptotypeDirection _generateRandomDirection() {
-    final directions = OptotypeDirection.values;
+    const directions = OptotypeDirection.values;
     return directions[_random.nextInt(directions.length)];
   }
 

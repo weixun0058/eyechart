@@ -219,7 +219,7 @@ class ResultDisplayData {
     required this.responseTimeFormatted,
   });
 
-  factory ResultDisplayData fromResult(EyeTestResult result) {
+  factory ResultDisplayData.fromResult(EyeTestResult result) {
     return ResultDisplayData(
       result: result,
       confidence: ResultInterpreter.assessConfidence(result),

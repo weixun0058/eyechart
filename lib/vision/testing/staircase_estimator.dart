@@ -111,9 +111,9 @@ class StaircaseEstimator {
     final correctQuestions = questions.where((item) => item.isCorrect).length;
     final totalQuestions = questions.length;
     final accuracy =
-        totalQuestions == 0 ? 0 : correctQuestions / totalQuestions;
+        totalQuestions == 0 ? 0.0 : correctQuestions / totalQuestions;
     final meanResponseTimeMs = totalQuestions == 0
-        ? 0
+        ? 0.0
         : VisionMath.mean(
             questions.map((item) => item.responseTimeMs.toDouble()),
           );

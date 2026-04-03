@@ -78,7 +78,7 @@ class TestSessionDao extends DatabaseAccessor<AppDatabase>
     return into(questionRecords).insert(record);
   }
 
-  Future<int> insertQuestionRecords(List<QuestionRecordsCompanion> records) {
+  Future<void> insertQuestionRecords(List<QuestionRecordsCompanion> records) {
     return batch((batch) {
       batch.insertAll(questionRecords, records);
     });

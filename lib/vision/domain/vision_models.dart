@@ -94,6 +94,49 @@ class TestConfig {
     required this.enableEnvironmentCheck,
     required this.enablePixelLimitProtection,
   });
+
+  TestConfig copyWith({
+    String? id,
+    EyeSide? eyeSide,
+    TestMode? testMode,
+    InputMode? inputMode,
+    double? testDistanceMm,
+    double? startLogMar,
+    double? minLogMar,
+    double? maxLogMar,
+    double? stepLogMar,
+    int? requiredCorrectForStepDown,
+    int? allowedWrongForStepUp,
+    int? requiredReversalCount,
+    int? maxQuestionCount,
+    int? answerTimeLimitMs,
+    double? minCriticalDetailPx,
+    bool? enableEnvironmentCheck,
+    bool? enablePixelLimitProtection,
+  }) {
+    return TestConfig(
+      id: id ?? this.id,
+      eyeSide: eyeSide ?? this.eyeSide,
+      testMode: testMode ?? this.testMode,
+      inputMode: inputMode ?? this.inputMode,
+      testDistanceMm: testDistanceMm ?? this.testDistanceMm,
+      startLogMar: startLogMar ?? this.startLogMar,
+      minLogMar: minLogMar ?? this.minLogMar,
+      maxLogMar: maxLogMar ?? this.maxLogMar,
+      stepLogMar: stepLogMar ?? this.stepLogMar,
+      requiredCorrectForStepDown:
+          requiredCorrectForStepDown ?? this.requiredCorrectForStepDown,
+      allowedWrongForStepUp: allowedWrongForStepUp ?? this.allowedWrongForStepUp,
+      requiredReversalCount: requiredReversalCount ?? this.requiredReversalCount,
+      maxQuestionCount: maxQuestionCount ?? this.maxQuestionCount,
+      answerTimeLimitMs: answerTimeLimitMs ?? this.answerTimeLimitMs,
+      minCriticalDetailPx: minCriticalDetailPx ?? this.minCriticalDetailPx,
+      enableEnvironmentCheck:
+          enableEnvironmentCheck ?? this.enableEnvironmentCheck,
+      enablePixelLimitProtection:
+          enablePixelLimitProtection ?? this.enablePixelLimitProtection,
+    );
+  }
 }
 
 class AcuityLevel {

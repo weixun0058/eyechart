@@ -177,7 +177,7 @@ class WindowsDisplayService implements PlatformDisplayService {
       final hdc = _getDC!(0);
       if (hdc != 0) {
         final dpiX = _getDeviceCaps!(hdc, LOGPIXELSX);
-        final dpiY = _getDeviceCaps!(hdc, LOGPIXELSY);
+        _getDeviceCaps!(hdc, LOGPIXELSY);
         _rawDpi = dpiX.toDouble();
         _systemScaleFactor = _rawDpi / 96.0;
         _releaseDC!(0, hdc);

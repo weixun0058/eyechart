@@ -105,7 +105,7 @@ class QuestionRecords extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
-  AppDatabase.connect(DatabaseConnection connection) : super.connect(connection);
+  AppDatabase.connect(QueryExecutor executor) : super(executor);
 
   @override
   int get schemaVersion => 1;

@@ -1,4 +1,4 @@
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:eyechart/vision/math/vision_math.dart';
 import 'package:eyechart/vision/domain/vision_models.dart';
 

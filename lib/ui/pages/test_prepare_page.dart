@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../vision/domain/vision_enums.dart';
 import '../../app/providers/test_config_provider.dart';
 
@@ -301,9 +302,6 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
 
   void _startTest(BuildContext context) {
     final testConfig = ref.read(testConfigProvider).toTestConfig();
-    Navigator.of(context).pushNamed(
-      '/test',
-      arguments: testConfig,
-    );
+    context.go('/test', extra: testConfig);
   }
 }

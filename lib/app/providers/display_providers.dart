@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'platform/platform_display.dart';
+import '../platform/platform_display.dart';
 
 final platformDisplayServiceProvider = Provider<PlatformDisplayService>((ref) {
   final service = createPlatformDisplayService();

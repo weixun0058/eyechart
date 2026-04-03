@@ -18,5 +18,6 @@ analyzer:
     - "**/*.freezed.dart"
     - "build/**"
     - ".dart_tool/**"
+    - "flutter/**"
   errors:
     invalid_annotation_target: ignore

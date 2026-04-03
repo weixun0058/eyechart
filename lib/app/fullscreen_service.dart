@@ -11,8 +11,6 @@ enum FullscreenState {
 class FullscreenService {
   FullscreenState _state = FullscreenState.windowed;
   bool _isStable = true;
-  SystemUiMode? _previousMode;
-  List<SystemUiOverlay>? _previousOverlays;
 
   FullscreenState get state => _state;
   bool get isFullscreen => _state == FullscreenState.fullscreen;
@@ -31,9 +29,6 @@ class FullscreenService {
     _isStable = false;
 
     try {
-      _previousMode = SystemUiMode.manual;
-      _previousOverlays = SystemUiOverlay.values;
-
       await SystemChrome.setEnabledSystemUIMode(
         SystemUiMode.immersiveSticky,
         overlays: [],
