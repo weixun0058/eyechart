@@ -12,7 +12,7 @@ class TestPreparePage extends ConsumerStatefulWidget {
 }
 
 class _TestPreparePageState extends ConsumerState<TestPreparePage> {
-  final _distanceController = TextEditingController(text: '5000');
+  final _distanceController = TextEditingController(text: '400');
 
   @override
   void initState() {
@@ -102,7 +102,7 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
             suffixText: 'mm',
             errorText: config.isValid
                 ? null
-                : '距离应在 1000-10000 mm 之间',
+                : '距离应在 200-1000 mm 之间',
             border: const OutlineInputBorder(),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
@@ -111,7 +111,7 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
           ),
         ),
         Text(
-          '建议距离: 5000 mm (5米)',
+          '建议距离: 400 mm (40厘米)',
           style: theme.textTheme.bodySmall?.copyWith(
             color: Colors.grey[600],
           ),

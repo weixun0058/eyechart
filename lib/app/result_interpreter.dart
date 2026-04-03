@@ -140,6 +140,8 @@ class ResultInterpreter {
         return '阈值已确定';
       case SessionEndReason.maxQuestionsReached:
         return '达到最大题数';
+      case SessionEndReason.bestAcuityReached:
+        return '已达到最佳视力上限';
       case SessionEndReason.pixelLimitReached:
         return '达到屏幕像素限制';
       case SessionEndReason.userAborted:

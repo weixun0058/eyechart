@@ -37,12 +37,20 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
   }
 
   void _updateScreenResolution() {
-    final mediaQuery = MediaQuery.of(context);
     final notifier = ref.read(deviceConfigProvider.notifier);
+    final (widthPx, heightPx, pixelRatio) = _detectScreenResolution();
+    if (widthPx <= 0 || heightPx <= 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _updateScreenResolution();
+        }
+      });
+      return;
+    }
     notifier.setScreenResolution(
-      widthPx: mediaQuery.size.width.toInt(),
-      heightPx: mediaQuery.size.height.toInt(),
-      pixelRatio: mediaQuery.devicePixelRatio,
+      widthPx: widthPx,
+      heightPx: heightPx,
+      pixelRatio: pixelRatio,
     );
   }
 
@@ -59,6 +67,18 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
       return;
     }
 
+    final (widthPx, heightPx, pixelRatio) = _detectScreenResolution();
+    if (widthPx <= 0 || heightPx <= 0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('无法读取屏幕分辨率，请稍后重试或重启应用'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
     final config = ref.read(deviceConfigProvider);
     final notifier = ref.read(deviceConfigProvider.notifier);
 
@@ -66,9 +86,9 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
       deviceName: _deviceNameController.text.trim(),
       screenWidthMm: double.parse(_widthController.text),
       screenHeightMm: double.parse(_heightController.text),
-      screenWidthPx: config.screenWidthPx,
-      screenHeightPx: config.screenHeightPx,
-      devicePixelRatio: config.devicePixelRatio,
+      screenWidthPx: widthPx,
+      screenHeightPx: heightPx,
+      devicePixelRatio: pixelRatio,
     );
 
     if (mounted) {
@@ -81,9 +101,9 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
               : _deviceNameController.text.trim(),
           screenWidthMm: double.parse(_widthController.text),
           screenHeightMm: double.parse(_heightController.text),
-          screenWidthPx: config.screenWidthPx,
-          screenHeightPx: config.screenHeightPx,
-          devicePixelRatio: config.devicePixelRatio,
+          screenWidthPx: widthPx,
+          screenHeightPx: heightPx,
+          devicePixelRatio: pixelRatio,
           isDpiAware: true,
           createdAt: now,
           updatedAt: now,
@@ -105,6 +125,33 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
         );
       }
     }
+  }
+
+  (int, int, double) _detectScreenResolution() {
+    final mediaQuery = MediaQuery.of(context);
+    final view = View.of(context);
+    final viewWidthPx = view.physicalSize.width.round();
+    final viewHeightPx = view.physicalSize.height.round();
+    if (viewWidthPx > 0 && viewHeightPx > 0) {
+      return (viewWidthPx, viewHeightPx, view.devicePixelRatio);
+    }
+
+    final dispatcherView = WidgetsBinding.instance.platformDispatcher.views.first;
+    final dispatcherWidthPx = dispatcherView.physicalSize.width.round();
+    final dispatcherHeightPx = dispatcherView.physicalSize.height.round();
+    if (dispatcherWidthPx > 0 && dispatcherHeightPx > 0) {
+      return (
+        dispatcherWidthPx,
+        dispatcherHeightPx,
+        dispatcherView.devicePixelRatio,
+      );
+    }
+
+    final fallbackWidthPx =
+        (mediaQuery.size.width * mediaQuery.devicePixelRatio).round();
+    final fallbackHeightPx =
+        (mediaQuery.size.height * mediaQuery.devicePixelRatio).round();
+    return (fallbackWidthPx, fallbackHeightPx, mediaQuery.devicePixelRatio);
   }
 
   @override
@@ -297,7 +344,7 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
   }
 
   Widget _buildCalculatedResults(DeviceConfigState config) {
-    final hasData = config.screenWidthPx > 0;
+    final hasData = config.screenWidthPx > 0 && config.screenHeightPx > 0;
     final pixelWidth = hasData ? config.pixelWidthMm : 0.0;
     final pixelHeight = hasData ? config.pixelHeightMm : 0.0;
 

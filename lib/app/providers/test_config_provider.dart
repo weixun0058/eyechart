@@ -11,7 +11,7 @@ class TestConfigState {
   final bool isValid;
 
   const TestConfigState({
-    this.testDistanceMm = 5000.0,
+    this.testDistanceMm = 400.0,
     this.eyeSide = EyeSide.both,
     this.testMode = TestMode.isolated,
     this.inputMode = InputMode.touchButtons,
@@ -64,7 +64,7 @@ class TestConfigNotifier extends StateNotifier<TestConfigState> {
   TestConfigNotifier() : super(const TestConfigState());
 
   void setTestDistance(double distanceMm) {
-    final isValid = distanceMm >= 1000 && distanceMm <= 10000;
+    final isValid = distanceMm >= 200 && distanceMm <= 1000;
     state = state.copyWith(
       testDistanceMm: distanceMm,
       isValid: isValid,

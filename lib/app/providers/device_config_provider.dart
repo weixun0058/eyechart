@@ -30,7 +30,10 @@ class DeviceConfigState {
       screenHeightPx > 0 ? screenHeightMm / screenHeightPx : 0.0;
 
   bool get hasValidConfig =>
-      screenWidthMm > 0 && screenHeightMm > 0 && screenWidthPx > 0;
+      screenWidthMm > 0 &&
+      screenHeightMm > 0 &&
+      screenWidthPx > 0 &&
+      screenHeightPx > 0;
 
   DeviceConfigState copyWith({
     String? deviceName,
@@ -86,13 +89,22 @@ class DeviceConfigNotifier extends StateNotifier<DeviceConfigState> {
   Future<void> _loadConfig() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final storedScreenWidthPx = prefs.getInt(_keyScreenWidthPx) ?? 0;
+      final storedScreenHeightPx = prefs.getInt(_keyScreenHeightPx) ?? 0;
+      final storedDevicePixelRatio =
+          prefs.getDouble(_keyDevicePixelRatio) ?? 1.0;
       state = state.copyWith(
         deviceName: prefs.getString(_keyDeviceName) ?? '',
         screenWidthMm: prefs.getDouble(_keyScreenWidthMm) ?? 0.0,
         screenHeightMm: prefs.getDouble(_keyScreenHeightMm) ?? 0.0,
-        screenWidthPx: prefs.getInt(_keyScreenWidthPx) ?? 0,
-        screenHeightPx: prefs.getInt(_keyScreenHeightPx) ?? 0,
-        devicePixelRatio: prefs.getDouble(_keyDevicePixelRatio) ?? 1.0,
+        screenWidthPx:
+            state.screenWidthPx > 0 ? state.screenWidthPx : storedScreenWidthPx,
+        screenHeightPx: state.screenHeightPx > 0
+            ? state.screenHeightPx
+            : storedScreenHeightPx,
+        devicePixelRatio: state.devicePixelRatio > 1.0
+            ? state.devicePixelRatio
+            : storedDevicePixelRatio,
       );
     } catch (e) {
       state = state.copyWith(errorMessage: '加载配置失败: $e');

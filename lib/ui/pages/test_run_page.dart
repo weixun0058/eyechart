@@ -30,7 +30,11 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
   @override
   void initState() {
     super.initState();
-    _initializeTest();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _initializeTest();
+      }
+    });
   }
 
   @override
@@ -79,7 +83,7 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
       _showFeedback = true;
     });
 
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 300), () async {
       if (mounted) {
         setState(() {
           _showFeedback = false;
@@ -88,10 +92,31 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
 
         if (result == AnswerResult.correctFinished ||
             result == AnswerResult.wrongFinished) {
-          _navigateToResult();
+          await _handleSessionFinished();
         }
       }
     });
+  }
+
+  Future<void> _handleSessionFinished() async {
+    final sessionState = ref.read(testSessionControllerProvider);
+    if (sessionState?.endReason == SessionEndReason.bestAcuityReached) {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('测试完成'),
+          content: const Text('已达到最佳视力上限（2.0），本次测试将结束。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('确定'),
+            ),
+          ],
+        ),
+      );
+    }
+    if (!mounted) return;
+    _navigateToResult();
   }
 
   void _navigateToResult() {
@@ -266,7 +291,7 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         child: EOptotypeView(
-          size: optotypeSize.clamp(50.0, 300.0),
+          size: optotypeSize.clamp(1.0, 300.0),
           direction: state.currentDirection,
           color: _showFeedback
               ? (_isCorrect ? Colors.green : Colors.red)

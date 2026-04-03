@@ -107,10 +107,15 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
 
   bool checkPixelLimit() {
     if (state == null) return false;
+    return _isPixelLimitReachedAtLogMar(state!.currentLogMar);
+  }
+
+  bool _isPixelLimitReachedAtLogMar(double logMar) {
+    if (state == null) return false;
     if (!state!.config.enablePixelLimitProtection) return false;
 
     final metrics = VisionMath.calculateRenderMetrics(
-      logMar: state!.currentLogMar,
+      logMar: logMar,
       testDistanceMm: state!.config.testDistanceMm,
       screenProfile: state!.screenProfile,
       minCriticalDetailPx: state!.config.minCriticalDetailPx,
@@ -148,6 +153,10 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
     );
 
     final updatedQuestions = [...state!.questions, questionRecord];
+    final reachedBestAcuityLimit = isCorrect &&
+        state!.staircaseState.currentLogMar <= state!.config.minLogMar + 1e-9 &&
+        state!.staircaseState.consecutiveCorrectCount + 1 >=
+            state!.config.requiredCorrectForStepDown;
 
     final newStaircaseState = StaircaseEstimator.applyAnswer(
       state: state!.staircaseState,
@@ -156,13 +165,22 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
       questionIndex: questionRecord.index,
     );
 
-    final pixelLimitReached = checkPixelLimit();
+    final nextRenderMetrics = VisionMath.calculateRenderMetrics(
+      logMar: newStaircaseState.currentLogMar,
+      testDistanceMm: state!.config.testDistanceMm,
+      screenProfile: state!.screenProfile,
+      minCriticalDetailPx: state!.config.minCriticalDetailPx,
+    );
+    final pixelLimitReached = nextRenderMetrics.pixelLimitReached;
 
     SessionEndReason? endReason;
     bool isFinished = false;
 
     if (newStaircaseState.thresholdReached) {
       endReason = SessionEndReason.thresholdReached;
+      isFinished = true;
+    } else if (reachedBestAcuityLimit) {
+      endReason = SessionEndReason.bestAcuityReached;
       isFinished = true;
     } else if (updatedQuestions.length >= state!.config.maxQuestionCount) {
       endReason = SessionEndReason.maxQuestionsReached;
@@ -179,17 +197,12 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
         isFinished: true,
         endReason: endReason,
         pixelLimitEncountered: pixelLimitReached,
+        currentRenderMetrics: nextRenderMetrics,
       );
       return isCorrect ? AnswerResult.correctFinished : AnswerResult.wrongFinished;
     }
 
     final nextDirection = _generateRandomDirection();
-    final nextRenderMetrics = VisionMath.calculateRenderMetrics(
-      logMar: newStaircaseState.currentLogMar,
-      testDistanceMm: state!.config.testDistanceMm,
-      screenProfile: state!.screenProfile,
-      minCriticalDetailPx: state!.config.minCriticalDetailPx,
-    );
 
     state = state!.copyWith(
       staircaseState: newStaircaseState,

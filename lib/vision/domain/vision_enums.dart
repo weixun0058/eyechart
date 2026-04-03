@@ -25,6 +25,7 @@ enum InputMode {
 enum SessionEndReason {
   thresholdReached,
   maxQuestionsReached,
+  bestAcuityReached,
   pixelLimitReached,
   userAborted,
 }

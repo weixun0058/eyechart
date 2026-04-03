@@ -661,6 +661,8 @@ class _SessionDetailSheet extends StatelessWidget {
         return '达到阈值';
       case 'maxQuestionsReached':
         return '达到最大题数';
+      case 'bestAcuityReached':
+        return '达到最佳视力上限';
       case 'pixelLimitReached':
         return '达到像素限制';
       case 'userAborted':
