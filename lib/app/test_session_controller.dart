@@ -65,7 +65,8 @@ class TestSessionState {
       questionShownAt: questionShownAt ?? this.questionShownAt,
       isFinished: isFinished ?? this.isFinished,
       endReason: endReason ?? this.endReason,
-      pixelLimitEncountered: pixelLimitEncountered ?? this.pixelLimitEncountered,
+      pixelLimitEncountered:
+          pixelLimitEncountered ?? this.pixelLimitEncountered,
       currentRenderMetrics: currentRenderMetrics ?? this.currentRenderMetrics,
     );
   }
@@ -125,6 +126,14 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
   }
 
   AnswerResult submitAnswer(OptotypeDirection userAnswer) {
+    return _submitAnswerInternal(userAnswer);
+  }
+
+  AnswerResult submitCannotSee() {
+    return _submitAnswerInternal(null);
+  }
+
+  AnswerResult _submitAnswerInternal(OptotypeDirection? userAnswer) {
     if (state == null || state!.isFinished) {
       return AnswerResult.invalid;
     }
@@ -199,7 +208,9 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
         pixelLimitEncountered: pixelLimitReached,
         currentRenderMetrics: nextRenderMetrics,
       );
-      return isCorrect ? AnswerResult.correctFinished : AnswerResult.wrongFinished;
+      return isCorrect
+          ? AnswerResult.correctFinished
+          : AnswerResult.wrongFinished;
     }
 
     final nextDirection = _generateRandomDirection();

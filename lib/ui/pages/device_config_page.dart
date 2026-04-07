@@ -17,10 +17,17 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
   final _deviceNameController = TextEditingController();
   final _widthController = TextEditingController();
   final _heightController = TextEditingController();
+  late final ProviderSubscription<DeviceConfigState> _configSubscription;
 
   @override
   void initState() {
     super.initState();
+    _configSubscription = ref.listenManual(deviceConfigProvider, (
+      previous,
+      next,
+    ) {
+      _syncControllers(previous, next);
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeFromState();
       _updateScreenResolution();
@@ -29,11 +36,51 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
 
   void _initializeFromState() {
     final config = ref.read(deviceConfigProvider);
-    _deviceNameController.text = config.deviceName;
-    _widthController.text =
-        config.screenWidthMm > 0 ? config.screenWidthMm.toString() : '';
-    _heightController.text =
-        config.screenHeightMm > 0 ? config.screenHeightMm.toString() : '';
+    _syncControllers(null, config);
+  }
+
+  void _syncControllers(
+    DeviceConfigState? previous,
+    DeviceConfigState next,
+  ) {
+    final previousDeviceName = previous?.deviceName ?? '';
+    final nextDeviceName = next.deviceName;
+    if (_deviceNameController.text.isEmpty ||
+        _deviceNameController.text == previousDeviceName) {
+      _setControllerValue(_deviceNameController, nextDeviceName);
+    }
+
+    final previousWidthText = _toFieldText(previous?.screenWidthMm ?? 0.0);
+    final nextWidthText = _toFieldText(next.screenWidthMm);
+    if (_widthController.text.isEmpty ||
+        _widthController.text == previousWidthText) {
+      _setControllerValue(_widthController, nextWidthText);
+    }
+
+    final previousHeightText = _toFieldText(previous?.screenHeightMm ?? 0.0);
+    final nextHeightText = _toFieldText(next.screenHeightMm);
+    if (_heightController.text.isEmpty ||
+        _heightController.text == previousHeightText) {
+      _setControllerValue(_heightController, nextHeightText);
+    }
+  }
+
+  String _toFieldText(double value) {
+    if (value <= 0) {
+      return '';
+    }
+    final fixed = value.toStringAsFixed(4);
+    return fixed.replaceFirst(RegExp(r'\.?0+$'), '');
+  }
+
+  void _setControllerValue(TextEditingController controller, String value) {
+    if (controller.text == value) {
+      return;
+    }
+    controller.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
   }
 
   void _updateScreenResolution() {
@@ -56,6 +103,7 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
 
   @override
   void dispose() {
+    _configSubscription.close();
     _deviceNameController.dispose();
     _widthController.dispose();
     _heightController.dispose();
@@ -136,7 +184,8 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
       return (viewWidthPx, viewHeightPx, view.devicePixelRatio);
     }
 
-    final dispatcherView = WidgetsBinding.instance.platformDispatcher.views.first;
+    final dispatcherView =
+        WidgetsBinding.instance.platformDispatcher.views.first;
     final dispatcherWidthPx = dispatcherView.physicalSize.width.round();
     final dispatcherHeightPx = dispatcherView.physicalSize.height.round();
     if (dispatcherWidthPx > 0 && dispatcherHeightPx > 0) {
@@ -239,8 +288,7 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
               const SizedBox(height: 12),
               _buildReadOnlyField(
                 label: '分辨率',
-                value:
-                    '${config.screenWidthPx} × ${config.screenHeightPx} 像素',
+                value: '${config.screenWidthPx} × ${config.screenHeightPx} 像素',
               ),
               const SizedBox(height: 8),
               _buildReadOnlyField(

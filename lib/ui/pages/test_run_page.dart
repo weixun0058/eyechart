@@ -76,7 +76,25 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
 
     final controller = ref.read(testSessionControllerProvider.notifier);
     final result = controller.submitAnswer(direction);
+    _processAnswerResult(result);
+  }
 
+  void _handleCannotSeeInput() {
+    if (_isProcessing) return;
+
+    final state = ref.read(testSessionControllerProvider);
+    if (state == null || state.isFinished) return;
+
+    setState(() {
+      _isProcessing = true;
+    });
+
+    final controller = ref.read(testSessionControllerProvider.notifier);
+    final result = controller.submitCannotSee();
+    _processAnswerResult(result);
+  }
+
+  void _processAnswerResult(AnswerResult result) {
     setState(() {
       _isCorrect = result == AnswerResult.correct ||
           result == AnswerResult.correctFinished;
@@ -138,6 +156,9 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
       direction = OptotypeDirection.left;
     } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
       direction = OptotypeDirection.right;
+    } else if (event.logicalKey == LogicalKeyboardKey.keyX) {
+      _handleCannotSeeInput();
+      return;
     } else if (event.logicalKey == LogicalKeyboardKey.escape) {
       _confirmExit();
       return;
@@ -236,7 +257,8 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
         children: [
           _buildInfoChip(
             icon: Icons.format_list_numbered,
-            label: '${state.currentQuestionIndex + 1}/${state.config.maxQuestionCount}',
+            label:
+                '${state.currentQuestionIndex + 1}/${state.config.maxQuestionCount}',
             theme: theme,
           ),
           _buildInfoChip(
@@ -285,13 +307,15 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
       return const Center(child: Text('渲染参数错误'));
     }
 
-    final optotypeSize = renderMetrics.optotypeWidthPx;
+    final viewDevicePixelRatio = View.of(context).devicePixelRatio;
+    final optotypeSizeLogicalPx =
+        renderMetrics.optotypeWidthPx / viewDevicePixelRatio;
 
     return Center(
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         child: EOptotypeView(
-          size: optotypeSize.clamp(1.0, 300.0),
+          size: optotypeSizeLogicalPx.clamp(1.0, 300.0),
           direction: state.currentDirection,
           color: _showFeedback
               ? (_isCorrect ? Colors.green : Colors.red)
@@ -318,14 +342,22 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
               inputMode == InputMode.keyboard) ...[
             DirectionPad(
               onDirectionSelected: _handleDirectionInput,
+              onCannotSee: _handleCannotSeeInput,
               enabled: !_isProcessing,
               buttonSize: 56,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '中间 X = 看不起',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[600],
+                  ),
             ),
           ],
           if (inputMode == InputMode.keyboard) ...[
             const SizedBox(height: 16),
             Text(
-              '或使用键盘方向键',
+              '或使用键盘方向键，按 X 表示看不起',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.grey[600],
                   ),

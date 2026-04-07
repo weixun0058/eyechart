@@ -79,6 +79,8 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
             _buildEyeSideSelector(theme, config),
             const SizedBox(height: 16),
             _buildTestModeSelector(theme, config),
+            const SizedBox(height: 16),
+            _buildPixelThresholdSelector(theme, config),
           ],
         ),
       ),
@@ -100,9 +102,7 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
           decoration: InputDecoration(
             hintText: '输入测试距离',
             suffixText: 'mm',
-            errorText: config.isValid
-                ? null
-                : '距离应在 200-1000 mm 之间',
+            errorText: config.isValid ? null : '距离应在 200-1000 mm 之间',
             border: const OutlineInputBorder(),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
@@ -186,6 +186,47 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
               ref.read(testConfigProvider.notifier).setTestMode(value);
             }
           },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPixelThresholdSelector(ThemeData theme, TestConfigState config) {
+    final isOnePixelMode = config.minCriticalDetailPx <= 1.0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '像素限制阈值',
+          style: theme.textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 8),
+        SegmentedButton<double>(
+          segments: const [
+            ButtonSegment<double>(
+              value: 2.0,
+              label: Text('2px（推荐）'),
+            ),
+            ButtonSegment<double>(
+              value: 1.0,
+              label: Text('1px（激进）'),
+            ),
+          ],
+          selected: {config.minCriticalDetailPx <= 1.0 ? 1.0 : 2.0},
+          onSelectionChanged: (Set<double> selection) {
+            ref
+                .read(testConfigProvider.notifier)
+                .setMinCriticalDetailPx(selection.first);
+          },
+        ),
+        const SizedBox(height: 6),
+        Text(
+          isOnePixelMode
+              ? '当前为 1px：会更接近硬件极限，最小视标更小。'
+              : '当前为 2px：更保守，通常更符合可辨识体验。',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: Colors.grey[600],
+          ),
         ),
       ],
     );

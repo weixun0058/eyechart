@@ -8,6 +8,7 @@ class TestConfigState {
   final TestMode testMode;
   final InputMode inputMode;
   final double startLogMar;
+  final double minCriticalDetailPx;
   final bool isValid;
 
   const TestConfigState({
@@ -16,6 +17,7 @@ class TestConfigState {
     this.testMode = TestMode.isolated,
     this.inputMode = InputMode.touchButtons,
     this.startLogMar = 0.5,
+    this.minCriticalDetailPx = 2.0,
     this.isValid = true,
   });
 
@@ -25,6 +27,7 @@ class TestConfigState {
     TestMode? testMode,
     InputMode? inputMode,
     double? startLogMar,
+    double? minCriticalDetailPx,
     bool? isValid,
   }) {
     return TestConfigState(
@@ -33,6 +36,7 @@ class TestConfigState {
       testMode: testMode ?? this.testMode,
       inputMode: inputMode ?? this.inputMode,
       startLogMar: startLogMar ?? this.startLogMar,
+      minCriticalDetailPx: minCriticalDetailPx ?? this.minCriticalDetailPx,
       isValid: isValid ?? this.isValid,
     );
   }
@@ -53,7 +57,7 @@ class TestConfigState {
       requiredReversalCount: 3,
       maxQuestionCount: 30,
       answerTimeLimitMs: 10000,
-      minCriticalDetailPx: 2.0,
+      minCriticalDetailPx: minCriticalDetailPx,
       enableEnvironmentCheck: true,
       enablePixelLimitProtection: true,
     );
@@ -85,6 +89,10 @@ class TestConfigNotifier extends StateNotifier<TestConfigState> {
 
   void setStartLogMar(double logMar) {
     state = state.copyWith(startLogMar: logMar);
+  }
+
+  void setMinCriticalDetailPx(double minCriticalDetailPx) {
+    state = state.copyWith(minCriticalDetailPx: minCriticalDetailPx);
   }
 
   void reset() {

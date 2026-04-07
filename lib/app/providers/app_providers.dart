@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../eyechart_core.dart';
 
-final screenProfileProvider =
-    StateProvider<ScreenProfile?>((ref) => null);
+final screenProfileProvider = StateProvider<ScreenProfile?>((ref) => null);
 
 final calibrationProfileProvider =
     StateProvider<CalibrationProfile?>((ref) => null);
@@ -34,8 +33,7 @@ final testConfigProvider = StateProvider<TestConfig?>((ref) {
   );
 });
 
-final staircaseStateProvider =
-    StateProvider<StaircaseState?>((ref) => null);
+final staircaseStateProvider = StateProvider<StaircaseState?>((ref) => null);
 
 final questionRecordsProvider =
     StateProvider<List<QuestionRecord>>((ref) => []);

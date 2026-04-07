@@ -3,6 +3,7 @@ import '../../vision/domain/vision_enums.dart';
 
 class DirectionPad extends StatelessWidget {
   final ValueChanged<OptotypeDirection> onDirectionSelected;
+  final VoidCallback? onCannotSee;
   final bool enabled;
   final double buttonSize;
   final double spacing;
@@ -10,6 +11,7 @@ class DirectionPad extends StatelessWidget {
   const DirectionPad({
     super.key,
     required this.onDirectionSelected,
+    this.onCannotSee,
     this.enabled = true,
     this.buttonSize = 64.0,
     this.spacing = 8.0,
@@ -38,7 +40,7 @@ class DirectionPad extends StatelessWidget {
               icon: Icons.keyboard_arrow_left,
               color: buttonColor,
             ),
-            SizedBox(width: buttonSize + spacing * 2),
+            _buildCannotSeeButton(color: buttonColor),
             _buildDirectionButton(
               direction: OptotypeDirection.right,
               icon: Icons.keyboard_arrow_right,
@@ -81,6 +83,41 @@ class DirectionPad extends StatelessWidget {
               icon,
               size: buttonSize * 0.6,
               color: color,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCannotSeeButton({
+    required Color color,
+  }) {
+    return Padding(
+      padding: EdgeInsets.all(spacing),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled && onCannotSee != null ? onCannotSee : null,
+          borderRadius: BorderRadius.circular(buttonSize / 2),
+          child: Container(
+            width: buttonSize,
+            height: buttonSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: color,
+                width: 2,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              'X',
+              style: TextStyle(
+                fontSize: buttonSize * 0.45,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ),
         ),
