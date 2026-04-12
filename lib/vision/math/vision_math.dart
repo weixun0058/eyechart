@@ -113,6 +113,19 @@ class VisionMath {
     );
   }
 
+  static double minimumTestDistanceMm({
+    required double logMar,
+    required ScreenProfile screenProfile,
+    double minCriticalDetailPx = 1.0,
+  }) {
+    _requirePositive(minCriticalDetailPx, 'minCriticalDetailPx');
+    final requiredDetailMm =
+        math.max(screenProfile.pixelWidthMm, screenProfile.pixelHeightMm) *
+        minCriticalDetailPx;
+    final detailAngleRad = arcminToRad(detailAngleArcminFromLogMar(logMar));
+    return requiredDetailMm / (2 * math.tan(detailAngleRad / 2));
+  }
+
   static bool isPixelLimitReached(
     RenderMetrics metrics,
     double minCriticalDetailPx,
@@ -128,6 +141,20 @@ class VisionMath {
 
     final sum = list.reduce((a, b) => a + b);
     return sum / list.length;
+  }
+
+  static double median(Iterable<double> values) {
+    final list = values.toList(growable: false)..sort();
+    if (list.isEmpty) {
+      throw ArgumentError.value(values, 'values', '不能为空');
+    }
+
+    final middleIndex = list.length ~/ 2;
+    if (list.length.isOdd) {
+      return list[middleIndex];
+    }
+
+    return (list[middleIndex - 1] + list[middleIndex]) / 2;
   }
 
   static double standardDeviation(Iterable<double> values) {

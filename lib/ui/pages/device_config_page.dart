@@ -17,93 +17,92 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
   final _deviceNameController = TextEditingController();
   final _widthController = TextEditingController();
   final _heightController = TextEditingController();
-  late final ProviderSubscription<DeviceConfigState> _configSubscription;
+  bool _deviceNameEdited = false;
+  bool _widthEdited = false;
+  bool _heightEdited = false;
 
   @override
   void initState() {
     super.initState();
-    _configSubscription = ref.listenManual(deviceConfigProvider, (
-      previous,
-      next,
-    ) {
-      _syncControllers(previous, next);
-    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeFromState();
-      _updateScreenResolution();
+      _initializePage();
     });
+  }
+
+  Future<void> _initializePage() async {
+    _initializeFromState();
+    await _applyDetectedDefaults();
   }
 
   void _initializeFromState() {
     final config = ref.read(deviceConfigProvider);
-    _syncControllers(null, config);
+    _deviceNameController.text = config.deviceName;
+    _widthController.text =
+        config.screenWidthMm > 0 ? config.screenWidthMm.toString() : '';
+    _heightController.text =
+        config.screenHeightMm > 0 ? config.screenHeightMm.toString() : '';
   }
 
-  void _syncControllers(
-    DeviceConfigState? previous,
-    DeviceConfigState next,
-  ) {
-    final previousDeviceName = previous?.deviceName ?? '';
-    final nextDeviceName = next.deviceName;
-    if (_deviceNameController.text.isEmpty ||
-        _deviceNameController.text == previousDeviceName) {
-      _setControllerValue(_deviceNameController, nextDeviceName);
-    }
-
-    final previousWidthText = _toFieldText(previous?.screenWidthMm ?? 0.0);
-    final nextWidthText = _toFieldText(next.screenWidthMm);
-    if (_widthController.text.isEmpty ||
-        _widthController.text == previousWidthText) {
-      _setControllerValue(_widthController, nextWidthText);
-    }
-
-    final previousHeightText = _toFieldText(previous?.screenHeightMm ?? 0.0);
-    final nextHeightText = _toFieldText(next.screenHeightMm);
-    if (_heightController.text.isEmpty ||
-        _heightController.text == previousHeightText) {
-      _setControllerValue(_heightController, nextHeightText);
-    }
-  }
-
-  String _toFieldText(double value) {
-    if (value <= 0) {
-      return '';
-    }
-    final fixed = value.toStringAsFixed(4);
-    return fixed.replaceFirst(RegExp(r'\.?0+$'), '');
-  }
-
-  void _setControllerValue(TextEditingController controller, String value) {
-    if (controller.text == value) {
-      return;
-    }
-    controller.value = TextEditingValue(
-      text: value,
-      selection: TextSelection.collapsed(offset: value.length),
-    );
-  }
-
-  void _updateScreenResolution() {
+  Future<void> _applyDetectedDefaults() async {
     final notifier = ref.read(deviceConfigProvider.notifier);
     final (widthPx, heightPx, pixelRatio) = _detectScreenResolution();
     if (widthPx <= 0 || heightPx <= 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          _updateScreenResolution();
+          _applyDetectedDefaults();
         }
       });
       return;
     }
+
     notifier.setScreenResolution(
       widthPx: widthPx,
       heightPx: heightPx,
       pixelRatio: pixelRatio,
     );
+
+    final deviceInfo = await ref
+        .read(deviceDefaultsServiceProvider)
+        .queryDeviceInfo();
+
+    notifier.applyDetectedDefaults(
+      detectedDeviceName: deviceInfo.deviceName,
+      detectedDiagonalInches: deviceInfo.screenDiagonalInches,
+      widthPx: widthPx,
+      heightPx: heightPx,
+      pixelRatio: pixelRatio,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    final config = ref.read(deviceConfigProvider);
+    _syncControllersFromState(config);
+  }
+
+  void _syncControllersFromState(DeviceConfigState config) {
+    if (!_deviceNameEdited &&
+        _deviceNameController.text.trim().isEmpty &&
+        config.deviceName.trim().isNotEmpty) {
+      _deviceNameController.text = config.deviceName;
+    }
+
+    if (!_widthEdited &&
+        _widthController.text.trim().isEmpty &&
+        config.screenWidthMm > 0) {
+      _widthController.text = config.screenWidthMm.toStringAsFixed(2);
+    }
+
+    if (!_heightEdited &&
+        _heightController.text.trim().isEmpty &&
+        config.screenHeightMm > 0) {
+      _heightController.text = config.screenHeightMm.toStringAsFixed(2);
+    }
   }
 
   @override
   void dispose() {
-    _configSubscription.close();
     _deviceNameController.dispose();
     _widthController.dispose();
     _heightController.dispose();
@@ -184,8 +183,7 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
       return (viewWidthPx, viewHeightPx, view.devicePixelRatio);
     }
 
-    final dispatcherView =
-        WidgetsBinding.instance.platformDispatcher.views.first;
+    final dispatcherView = WidgetsBinding.instance.platformDispatcher.views.first;
     final dispatcherWidthPx = dispatcherView.physicalSize.width.round();
     final dispatcherHeightPx = dispatcherView.physicalSize.height.round();
     if (dispatcherWidthPx > 0 && dispatcherHeightPx > 0) {
@@ -223,6 +221,10 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _deviceNameController,
+                onChanged: (value) {
+                  _deviceNameEdited = true;
+                  ref.read(deviceConfigProvider.notifier).updateDeviceName(value);
+                },
                 decoration: const InputDecoration(
                   labelText: '设备名称',
                   hintText: '例如：iPhone 15 Pro',
@@ -237,6 +239,15 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
                   Expanded(
                     child: TextFormField(
                       controller: _widthController,
+                      onChanged: (value) {
+                        _widthEdited = true;
+                        final width = double.tryParse(value);
+                        if (width != null && width > 0) {
+                          ref
+                              .read(deviceConfigProvider.notifier)
+                              .updateScreenWidthMm(width);
+                        }
+                      },
                       decoration: const InputDecoration(
                         labelText: '宽度 (mm)',
                         hintText: '例如：71.5',
@@ -261,6 +272,15 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
                   Expanded(
                     child: TextFormField(
                       controller: _heightController,
+                      onChanged: (value) {
+                        _heightEdited = true;
+                        final height = double.tryParse(value);
+                        if (height != null && height > 0) {
+                          ref
+                              .read(deviceConfigProvider.notifier)
+                              .updateScreenHeightMm(height);
+                        }
+                      },
                       decoration: const InputDecoration(
                         labelText: '高度 (mm)',
                         hintText: '例如：147.0',
@@ -288,12 +308,20 @@ class _DeviceConfigPageState extends ConsumerState<DeviceConfigPage> {
               const SizedBox(height: 12),
               _buildReadOnlyField(
                 label: '分辨率',
-                value: '${config.screenWidthPx} × ${config.screenHeightPx} 像素',
+                value:
+                    '${config.screenWidthPx} × ${config.screenHeightPx} 像素',
               ),
               const SizedBox(height: 8),
               _buildReadOnlyField(
                 label: '设备像素比',
                 value: config.devicePixelRatio.toStringAsFixed(2),
+              ),
+              const SizedBox(height: 8),
+              _buildReadOnlyField(
+                label: '检测对角线',
+                value: config.detectedDiagonalInches > 0
+                    ? '${config.detectedDiagonalInches.toStringAsFixed(2)} 英寸'
+                    : '未检测到',
               ),
               const SizedBox(height: 24),
               _buildSectionTitle('计算结果'),

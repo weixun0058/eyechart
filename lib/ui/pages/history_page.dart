@@ -2,21 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../app/providers/db_providers.dart';
 import '../../data/local/database.dart';
-import '../../data/local/dao/test_session_dao.dart';
-
-final databaseProvider = Provider<AppDatabase>((ref) {
-  return AppDatabase();
-});
-
-final testSessionDaoProvider = Provider<TestSessionDao>((ref) {
-  return TestSessionDao(ref.watch(databaseProvider));
-});
-
-final sessionsProvider = FutureProvider<List<TestSessionRow>>((ref) async {
-  final dao = ref.watch(testSessionDaoProvider);
-  return dao.getAllSessions();
-});
 
 class HistoryPage extends ConsumerStatefulWidget {
   const HistoryPage({super.key});
@@ -31,7 +18,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final sessionsAsync = ref.watch(sessionsProvider);
+    final sessionsAsync = ref.watch(testSessionsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -80,7 +67,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => ref.invalidate(sessionsProvider),
+                onPressed: () => ref.invalidate(testSessionsProvider),
                 child: const Text('重试'),
               ),
             ],
@@ -256,7 +243,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: (color ?? Colors.blue).withOpacity(0.1),
+        color: (color ?? Colors.blue).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -389,7 +376,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              ref.invalidate(sessionsProvider);
+              ref.invalidate(testSessionsProvider);
             },
             child: const Text('应用'),
           ),

@@ -1,8 +1,6 @@
-import 'dart:io';
-
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../platform/device_defaults_service.dart';
 import '../../vision/domain/vision_models.dart';
 
 class DeviceConfigState {
@@ -12,6 +10,8 @@ class DeviceConfigState {
   final int screenWidthPx;
   final int screenHeightPx;
   final double devicePixelRatio;
+  final double detectedDiagonalInches;
+  final bool isLoaded;
   final bool isSaving;
   final String? errorMessage;
 
@@ -22,6 +22,8 @@ class DeviceConfigState {
     this.screenWidthPx = 0,
     this.screenHeightPx = 0,
     this.devicePixelRatio = 1.0,
+    this.detectedDiagonalInches = 0.0,
+    this.isLoaded = false,
     this.isSaving = false,
     this.errorMessage,
   });
@@ -45,6 +47,8 @@ class DeviceConfigState {
     int? screenWidthPx,
     int? screenHeightPx,
     double? devicePixelRatio,
+    double? detectedDiagonalInches,
+    bool? isLoaded,
     bool? isSaving,
     String? errorMessage,
   }) {
@@ -55,6 +59,9 @@ class DeviceConfigState {
       screenWidthPx: screenWidthPx ?? this.screenWidthPx,
       screenHeightPx: screenHeightPx ?? this.screenHeightPx,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
+      detectedDiagonalInches:
+          detectedDiagonalInches ?? this.detectedDiagonalInches,
+      isLoaded: isLoaded ?? this.isLoaded,
       isSaving: isSaving ?? this.isSaving,
       errorMessage: errorMessage,
     );
@@ -92,19 +99,12 @@ class DeviceConfigNotifier extends StateNotifier<DeviceConfigState> {
   Future<void> _loadConfig() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final storedDeviceName = prefs.getString(_keyDeviceName)?.trim() ?? '';
-      final resolvedDeviceName = storedDeviceName.isNotEmpty
-          ? storedDeviceName
-          : await _detectDeviceName();
-      if (storedDeviceName.isEmpty && resolvedDeviceName.isNotEmpty) {
-        await prefs.setString(_keyDeviceName, resolvedDeviceName);
-      }
       final storedScreenWidthPx = prefs.getInt(_keyScreenWidthPx) ?? 0;
       final storedScreenHeightPx = prefs.getInt(_keyScreenHeightPx) ?? 0;
       final storedDevicePixelRatio =
           prefs.getDouble(_keyDevicePixelRatio) ?? 1.0;
       state = state.copyWith(
-        deviceName: resolvedDeviceName,
+        deviceName: prefs.getString(_keyDeviceName) ?? '',
         screenWidthMm: prefs.getDouble(_keyScreenWidthMm) ?? 0.0,
         screenHeightMm: prefs.getDouble(_keyScreenHeightMm) ?? 0.0,
         screenWidthPx:
@@ -115,9 +115,13 @@ class DeviceConfigNotifier extends StateNotifier<DeviceConfigState> {
         devicePixelRatio: state.devicePixelRatio > 1.0
             ? state.devicePixelRatio
             : storedDevicePixelRatio,
+        isLoaded: true,
       );
     } catch (e) {
-      state = state.copyWith(errorMessage: '加载配置失败: $e');
+      state = state.copyWith(
+        isLoaded: true,
+        errorMessage: '加载配置失败: $e',
+      );
     }
   }
 
@@ -132,9 +136,8 @@ class DeviceConfigNotifier extends StateNotifier<DeviceConfigState> {
     state = state.copyWith(isSaving: true, errorMessage: null);
 
     try {
-      final resolvedDeviceName = await _resolveDeviceName(deviceName);
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_keyDeviceName, resolvedDeviceName);
+      await prefs.setString(_keyDeviceName, deviceName);
       await prefs.setDouble(_keyScreenWidthMm, screenWidthMm);
       await prefs.setDouble(_keyScreenHeightMm, screenHeightMm);
       await prefs.setInt(_keyScreenWidthPx, screenWidthPx);
@@ -142,12 +145,13 @@ class DeviceConfigNotifier extends StateNotifier<DeviceConfigState> {
       await prefs.setDouble(_keyDevicePixelRatio, devicePixelRatio);
 
       state = state.copyWith(
-        deviceName: resolvedDeviceName,
+        deviceName: deviceName,
         screenWidthMm: screenWidthMm,
         screenHeightMm: screenHeightMm,
         screenWidthPx: screenWidthPx,
         screenHeightPx: screenHeightPx,
         devicePixelRatio: devicePixelRatio,
+        isLoaded: true,
         isSaving: false,
       );
 
@@ -161,70 +165,6 @@ class DeviceConfigNotifier extends StateNotifier<DeviceConfigState> {
     }
   }
 
-  Future<String> _resolveDeviceName(String inputDeviceName) async {
-    final trimmedInputName = inputDeviceName.trim();
-    if (trimmedInputName.isNotEmpty) {
-      return trimmedInputName;
-    }
-    final currentStateName = state.deviceName.trim();
-    if (currentStateName.isNotEmpty) {
-      return currentStateName;
-    }
-    final detectedName = await _detectDeviceName();
-    if (detectedName.isNotEmpty) {
-      return detectedName;
-    }
-    return '当前设备';
-  }
-
-  Future<String> _detectDeviceName() async {
-    try {
-      final deviceInfo = DeviceInfoPlugin();
-      if (Platform.isAndroid) {
-        final info = await deviceInfo.androidInfo;
-        final manufacturer = info.manufacturer.trim();
-        final model = info.model.trim();
-        if (manufacturer.isEmpty && model.isEmpty) {
-          return '';
-        }
-        if (manufacturer.toLowerCase() == model.toLowerCase()) {
-          return model;
-        }
-        if (manufacturer.isEmpty) {
-          return model;
-        }
-        if (model.isEmpty) {
-          return manufacturer;
-        }
-        return '$manufacturer $model';
-      }
-      if (Platform.isIOS) {
-        final info = await deviceInfo.iosInfo;
-        final name = info.name.trim();
-        final model = info.model.trim();
-        if (name.isNotEmpty) {
-          return name;
-        }
-        return model;
-      }
-      if (Platform.isWindows) {
-        final info = await deviceInfo.windowsInfo;
-        return info.computerName.trim();
-      }
-      if (Platform.isMacOS) {
-        final info = await deviceInfo.macOsInfo;
-        return info.computerName.trim();
-      }
-      if (Platform.isLinux) {
-        final info = await deviceInfo.linuxInfo;
-        return info.prettyName.trim();
-      }
-    } catch (_) {
-      return '';
-    }
-    return '';
-  }
-
   void updateScreenWidthMm(double width) {
     state = state.copyWith(screenWidthMm: width);
   }
@@ -235,6 +175,39 @@ class DeviceConfigNotifier extends StateNotifier<DeviceConfigState> {
 
   void updateDeviceName(String name) {
     state = state.copyWith(deviceName: name);
+  }
+
+  void applyDetectedDefaults({
+    required String detectedDeviceName,
+    required double detectedDiagonalInches,
+    required int widthPx,
+    required int heightPx,
+    required double pixelRatio,
+  }) {
+    final estimatedPhysicalSize = estimatePhysicalScreenSize(
+      widthPx: widthPx,
+      heightPx: heightPx,
+      diagonalInches: detectedDiagonalInches,
+    );
+
+    state = state.copyWith(
+      deviceName: state.deviceName.trim().isEmpty
+          ? detectedDeviceName
+          : state.deviceName,
+      screenWidthMm: state.screenWidthMm > 0
+          ? state.screenWidthMm
+          : estimatedPhysicalSize.widthMm,
+      screenHeightMm: state.screenHeightMm > 0
+          ? state.screenHeightMm
+          : estimatedPhysicalSize.heightMm,
+      screenWidthPx: widthPx,
+      screenHeightPx: heightPx,
+      devicePixelRatio: pixelRatio,
+      detectedDiagonalInches: detectedDiagonalInches > 0
+          ? detectedDiagonalInches
+          : state.detectedDiagonalInches,
+      errorMessage: null,
+    );
   }
 
   void setScreenResolution({
@@ -258,3 +231,7 @@ final deviceConfigProvider =
     StateNotifierProvider<DeviceConfigNotifier, DeviceConfigState>(
   (ref) => DeviceConfigNotifier(),
 );
+
+final deviceDefaultsServiceProvider = Provider<DeviceDefaultsService>((ref) {
+  return const DeviceDefaultsService();
+});

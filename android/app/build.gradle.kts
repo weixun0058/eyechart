@@ -1,9 +1,16 @@
+import java.io.File
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+val projectDebugKeystore = rootProject.file("debug.keystore")
+val userDebugKeystore = File(System.getProperty("user.home"), ".android/debug.keystore")
+val resolvedDebugKeystore =
+    if (projectDebugKeystore.exists()) projectDebugKeystore else userDebugKeystore
 
 android {
     namespace = "com.example.eyechart"
@@ -28,6 +35,15 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            storeFile = resolvedDebugKeystore
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {

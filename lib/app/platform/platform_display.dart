@@ -89,7 +89,7 @@ class DefaultDisplayService implements PlatformDisplayService {
   bool get isHighDpi => _devicePixelRatio > 1.5;
 
   @override
-  DisplayInfo get displayInfo => DisplayInfo(
+  DisplayInfo get displayInfo => const DisplayInfo(
         physicalWidthMm: 0,
         physicalHeightMm: 0,
         diagonalInches: 0,

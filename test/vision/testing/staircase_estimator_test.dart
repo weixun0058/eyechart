@@ -9,7 +9,7 @@ void main() {
     late TestConfig config;
 
     setUp(() {
-      config = TestConfig(
+      config = const TestConfig(
         id: 'test-config',
         eyeSide: EyeSide.right,
         testMode: TestMode.isolated,
@@ -425,9 +425,9 @@ void main() {
         );
       });
 
-      test('should calculate mean of single reversal', () {
+      test('should calculate median of single reversal', () {
         final reversals = [
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 0,
             logMar: 0.3,
             previousDirection: StepDirection.up,
@@ -440,27 +440,27 @@ void main() {
         expect(threshold, closeTo(0.3, 0.0000001));
       });
 
-      test('should calculate mean of last N reversals', () {
+      test('should calculate median of last N reversals', () {
         final reversals = [
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 0,
             logMar: 0.5,
             previousDirection: StepDirection.up,
             currentDirection: StepDirection.down,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 1,
             logMar: 0.4,
             previousDirection: StepDirection.down,
             currentDirection: StepDirection.up,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 2,
             logMar: 0.3,
             previousDirection: StepDirection.up,
             currentDirection: StepDirection.down,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 3,
             logMar: 0.2,
             previousDirection: StepDirection.down,
@@ -478,13 +478,13 @@ void main() {
 
       test('should use all reversals when fewer than lastN', () {
         final reversals = [
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 0,
             logMar: 0.4,
             previousDirection: StepDirection.up,
             currentDirection: StepDirection.down,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 1,
             logMar: 0.2,
             previousDirection: StepDirection.down,
@@ -502,31 +502,31 @@ void main() {
 
       test('should use default lastN=4 when not specified', () {
         final reversals = [
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 0,
             logMar: 0.6,
             previousDirection: StepDirection.up,
             currentDirection: StepDirection.down,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 1,
             logMar: 0.5,
             previousDirection: StepDirection.down,
             currentDirection: StepDirection.up,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 2,
             logMar: 0.4,
             previousDirection: StepDirection.up,
             currentDirection: StepDirection.down,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 3,
             logMar: 0.3,
             previousDirection: StepDirection.down,
             currentDirection: StepDirection.up,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 4,
             logMar: 0.2,
             previousDirection: StepDirection.up,
@@ -538,6 +538,39 @@ void main() {
 
         expect(threshold, equals(0.35));
       });
+
+      test('should reduce the influence of a single outlier reversal', () {
+        final reversals = [
+          const ReversalPoint(
+            questionIndex: 0,
+            logMar: 0.2,
+            previousDirection: StepDirection.up,
+            currentDirection: StepDirection.down,
+          ),
+          const ReversalPoint(
+            questionIndex: 1,
+            logMar: 0.2,
+            previousDirection: StepDirection.down,
+            currentDirection: StepDirection.up,
+          ),
+          const ReversalPoint(
+            questionIndex: 2,
+            logMar: 0.2,
+            previousDirection: StepDirection.up,
+            currentDirection: StepDirection.down,
+          ),
+          const ReversalPoint(
+            questionIndex: 3,
+            logMar: 0.4,
+            previousDirection: StepDirection.down,
+            currentDirection: StepDirection.up,
+          ),
+        ];
+
+        final threshold = StaircaseEstimator.estimateThresholdLogMar(reversals);
+
+        expect(threshold, equals(0.2));
+      });
     });
 
     group('calculateReversalStdDev', () {
@@ -548,7 +581,7 @@ void main() {
 
       test('should return 0 for single reversal', () {
         final reversals = [
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 0,
             logMar: 0.3,
             previousDirection: StepDirection.up,
@@ -562,13 +595,13 @@ void main() {
 
       test('should calculate standard deviation correctly', () {
         final reversals = [
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 0,
             logMar: 0.2,
             previousDirection: StepDirection.up,
             currentDirection: StepDirection.down,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 1,
             logMar: 0.4,
             previousDirection: StepDirection.down,
@@ -583,25 +616,25 @@ void main() {
 
       test('should use last N reversals for calculation', () {
         final reversals = [
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 0,
             logMar: 0.5,
             previousDirection: StepDirection.up,
             currentDirection: StepDirection.down,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 1,
             logMar: 0.5,
             previousDirection: StepDirection.down,
             currentDirection: StepDirection.up,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 2,
             logMar: 0.3,
             previousDirection: StepDirection.up,
             currentDirection: StepDirection.down,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 3,
             logMar: 0.3,
             previousDirection: StepDirection.down,
@@ -621,13 +654,13 @@ void main() {
     group('buildEyeTestResult', () {
       test('should build result with correct values', () {
         final reversals = [
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 0,
             logMar: 0.3,
             previousDirection: StepDirection.up,
             currentDirection: StepDirection.down,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 1,
             logMar: 0.2,
             previousDirection: StepDirection.down,
@@ -648,7 +681,7 @@ void main() {
             isCorrect: true,
             isTimeout: false,
             responseTimeMs: 1500,
-            renderMetrics: RenderMetrics(
+            renderMetrics: const RenderMetrics(
               testDistanceMm: 4000,
               optotypeSizeMm: 10,
               detailSizeMm: 2,
@@ -674,7 +707,7 @@ void main() {
             isCorrect: false,
             isTimeout: false,
             responseTimeMs: 2000,
-            renderMetrics: RenderMetrics(
+            renderMetrics: const RenderMetrics(
               testDistanceMm: 4000,
               optotypeSizeMm: 8,
               detailSizeMm: 1.6,
@@ -708,13 +741,13 @@ void main() {
 
       test('should recommend retest when std dev is high', () {
         final reversals = [
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 0,
             logMar: 0.1,
             previousDirection: StepDirection.up,
             currentDirection: StepDirection.down,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 1,
             logMar: 0.5,
             previousDirection: StepDirection.down,
@@ -734,13 +767,13 @@ void main() {
 
       test('should not recommend retest when std dev is low', () {
         final reversals = [
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 0,
             logMar: 0.25,
             previousDirection: StepDirection.up,
             currentDirection: StepDirection.down,
           ),
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 1,
             logMar: 0.25,
             previousDirection: StepDirection.down,
@@ -760,7 +793,7 @@ void main() {
 
       test('should handle empty questions', () {
         final reversals = [
-          ReversalPoint(
+          const ReversalPoint(
             questionIndex: 0,
             logMar: 0.3,
             previousDirection: StepDirection.up,
@@ -779,6 +812,143 @@ void main() {
         expect(result.correctQuestions, equals(0));
         expect(result.accuracy, equals(0));
         expect(result.meanResponseTimeMs, equals(0));
+      });
+
+      test('should use confirmed best line when reversals are absent', () {
+        final now = DateTime.now();
+        final questions = [
+          for (var index = 0; index < 3; index++)
+            QuestionRecord(
+              index: index,
+              eyeSide: EyeSide.right,
+              testMode: TestMode.isolated,
+              targetLogMar: 0.4,
+              targetDecimalAcuity: 0.4,
+              targetFivePointAcuity: 4.6,
+              displayedDirection: OptotypeDirection.up,
+              userAnswer: OptotypeDirection.up,
+              isCorrect: true,
+              isTimeout: false,
+              responseTimeMs: 1500,
+              renderMetrics: const RenderMetrics(
+                testDistanceMm: 4000,
+                optotypeSizeMm: 8,
+                detailSizeMm: 1.6,
+                optotypeWidthPx: 24,
+                optotypeHeightPx: 24,
+                detailWidthPx: 4.8,
+                detailHeightPx: 4.8,
+                criticalDetailPx: 4.8,
+                pixelLimitReached: false,
+              ),
+              shownAt: now,
+              answeredAt: now,
+            ),
+          for (var index = 3; index < 6; index++)
+            QuestionRecord(
+              index: index,
+              eyeSide: EyeSide.right,
+              testMode: TestMode.isolated,
+              targetLogMar: 0.3,
+              targetDecimalAcuity: 0.5,
+              targetFivePointAcuity: 4.7,
+              displayedDirection: OptotypeDirection.left,
+              userAnswer: OptotypeDirection.left,
+              isCorrect: true,
+              isTimeout: false,
+              responseTimeMs: 1500,
+              renderMetrics: const RenderMetrics(
+                testDistanceMm: 4000,
+                optotypeSizeMm: 7,
+                detailSizeMm: 1.4,
+                optotypeWidthPx: 21,
+                optotypeHeightPx: 21,
+                detailWidthPx: 4.2,
+                detailHeightPx: 4.2,
+                criticalDetailPx: 4.2,
+                pixelLimitReached: false,
+              ),
+              shownAt: now,
+              answeredAt: now,
+            ),
+        ];
+
+        final result = StaircaseEstimator.buildEyeTestResult(
+          eyeSide: EyeSide.right,
+          questions: questions,
+          reversals: const [],
+          pixelLimitEncountered: false,
+        );
+
+        expect(result.estimatedLogMar, equals(0.3));
+      });
+
+      test('should not report worse than the best confirmed line after one bad reversal', () {
+        final now = DateTime.now();
+        final questions = [
+          for (var index = 0; index < 5; index++)
+            QuestionRecord(
+              index: index,
+              eyeSide: EyeSide.right,
+              testMode: TestMode.isolated,
+              targetLogMar: 0.3,
+              targetDecimalAcuity: 0.5,
+              targetFivePointAcuity: 4.7,
+              displayedDirection: OptotypeDirection.up,
+              userAnswer: index == 4 ? OptotypeDirection.left : OptotypeDirection.up,
+              isCorrect: index < 4,
+              isTimeout: false,
+              responseTimeMs: 1500,
+              renderMetrics: const RenderMetrics(
+                testDistanceMm: 4000,
+                optotypeSizeMm: 7,
+                detailSizeMm: 1.4,
+                optotypeWidthPx: 21,
+                optotypeHeightPx: 21,
+                detailWidthPx: 4.2,
+                detailHeightPx: 4.2,
+                criticalDetailPx: 4.2,
+                pixelLimitReached: false,
+              ),
+              shownAt: now,
+              answeredAt: now,
+            ),
+        ];
+        final reversals = [
+          const ReversalPoint(
+            questionIndex: 4,
+            logMar: 0.3,
+            previousDirection: StepDirection.up,
+            currentDirection: StepDirection.down,
+          ),
+          const ReversalPoint(
+            questionIndex: 5,
+            logMar: 0.4,
+            previousDirection: StepDirection.down,
+            currentDirection: StepDirection.up,
+          ),
+          const ReversalPoint(
+            questionIndex: 6,
+            logMar: 0.4,
+            previousDirection: StepDirection.up,
+            currentDirection: StepDirection.down,
+          ),
+          const ReversalPoint(
+            questionIndex: 7,
+            logMar: 0.4,
+            previousDirection: StepDirection.down,
+            currentDirection: StepDirection.up,
+          ),
+        ];
+
+        final result = StaircaseEstimator.buildEyeTestResult(
+          eyeSide: EyeSide.right,
+          questions: questions,
+          reversals: reversals,
+          pixelLimitEncountered: false,
+        );
+
+        expect(result.estimatedLogMar, equals(0.3));
       });
     });
 

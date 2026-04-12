@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../app/providers/app_providers.dart';
 import '../../vision/domain/vision_enums.dart';
+import '../../vision/math/vision_math.dart';
 import '../../app/providers/test_config_provider.dart';
 
 class TestPreparePage extends ConsumerStatefulWidget {
@@ -51,9 +53,11 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
           children: [
             _buildConfigSection(theme, config),
             const SizedBox(height: 24),
-            _buildInstructionsSection(theme),
-            const SizedBox(height: 32),
+            _buildDeviceConfigButton(context),
+            const SizedBox(height: 16),
             _buildStartButton(context, config),
+            const SizedBox(height: 24),
+            _buildInstructionsSection(theme),
           ],
         ),
       ),
@@ -79,8 +83,6 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
             _buildEyeSideSelector(theme, config),
             const SizedBox(height: 16),
             _buildTestModeSelector(theme, config),
-            const SizedBox(height: 16),
-            _buildPixelThresholdSelector(theme, config),
           ],
         ),
       ),
@@ -88,6 +90,17 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
   }
 
   Widget _buildDistanceInput(ThemeData theme, TestConfigState config) {
+    final screenProfile = ref.watch(screenProfileProvider);
+    final minimumDistanceMm = screenProfile == null
+        ? null
+        : VisionMath.minimumTestDistanceMm(
+            logMar: VisionMath.logMarFromDecimal(1.5),
+            screenProfile: screenProfile,
+            minCriticalDetailPx: 1.0,
+          );
+    final isBelowMinimumDistance =
+        minimumDistanceMm != null && config.testDistanceMm < minimumDistanceMm;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -102,7 +115,9 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
           decoration: InputDecoration(
             hintText: '输入测试距离',
             suffixText: 'mm',
-            errorText: config.isValid ? null : '距离应在 200-1000 mm 之间',
+            errorText: config.isValid
+                ? null
+                : '距离应在 200-1000 mm 之间',
             border: const OutlineInputBorder(),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
@@ -116,6 +131,30 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
             color: Colors.grey[600],
           ),
         ),
+        if (minimumDistanceMm != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            '当前设备按 1 px 为最小分辨极限计算，若要测到 1.5 视力，测试距离不能低于 ${minimumDistanceMm.toStringAsFixed(0)} mm。',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: isBelowMinimumDistance
+                  ? theme.colorScheme.error
+                  : Colors.grey[700],
+              fontWeight: isBelowMinimumDistance
+                  ? FontWeight.w600
+                  : FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            isBelowMinimumDistance
+                ? '当前输入距离低于该下限，1.5 视力结果会不准确。'
+                : '若距离低于该下限，1.5 视力结果会不准确。',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.error,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -165,67 +204,37 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
           style: theme.textTheme.bodyMedium,
         ),
         const SizedBox(height: 8),
-        RadioListTile<TestMode>(
-          title: const Text('孤立模式'),
-          subtitle: const Text('单个视标显示，适合初学者'),
-          value: TestMode.isolated,
-          groupValue: config.testMode,
-          onChanged: (TestMode? value) {
-            if (value != null) {
-              ref.read(testConfigProvider.notifier).setTestMode(value);
-            }
-          },
-        ),
-        RadioListTile<TestMode>(
-          title: const Text('拥挤模式'),
-          subtitle: const Text('多视标显示，更接近临床测试'),
-          value: TestMode.crowded,
-          groupValue: config.testMode,
-          onChanged: (TestMode? value) {
-            if (value != null) {
-              ref.read(testConfigProvider.notifier).setTestMode(value);
-            }
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPixelThresholdSelector(ThemeData theme, TestConfigState config) {
-    final isOnePixelMode = config.minCriticalDetailPx <= 1.0;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '像素限制阈值',
-          style: theme.textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 8),
-        SegmentedButton<double>(
+        SegmentedButton<TestMode>(
           segments: const [
-            ButtonSegment<double>(
-              value: 2.0,
-              label: Text('2px（推荐）'),
+            ButtonSegment(
+              value: TestMode.isolated,
+              label: Text('孤立模式'),
+              icon: Icon(Icons.center_focus_strong),
             ),
-            ButtonSegment<double>(
-              value: 1.0,
-              label: Text('1px（激进）'),
+            ButtonSegment(
+              value: TestMode.crowded,
+              label: Text('拥挤模式'),
+              icon: Icon(Icons.grid_view),
+              enabled: false,
             ),
           ],
-          selected: {config.minCriticalDetailPx <= 1.0 ? 1.0 : 2.0},
-          onSelectionChanged: (Set<double> selection) {
-            ref
-                .read(testConfigProvider.notifier)
-                .setMinCriticalDetailPx(selection.first);
+          selected: {config.testMode},
+          onSelectionChanged: (Set<TestMode> selection) {
+            if (selection.isEmpty) {
+              return;
+            }
+            final selectedMode = selection.first;
+            if (selectedMode == TestMode.crowded) {
+              return;
+            }
+            ref.read(testConfigProvider.notifier).setTestMode(selectedMode);
           },
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Text(
-          isOnePixelMode
-              ? '当前为 1px：会更接近硬件极限，最小视标更小。'
-              : '当前为 2px：更保守，通常更符合可辨识体验。',
+          '孤立模式为当前可用模式；拥挤模式入口已预留，后续开放。',
           style: theme.textTheme.bodySmall?.copyWith(
-            color: Colors.grey[600],
+            color: Colors.grey[700],
           ),
         ),
       ],
@@ -314,6 +323,18 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildDeviceConfigButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton.icon(
+        onPressed: () => context.go('/config'),
+        icon: const Icon(Icons.devices_outlined),
+        label: const Text('修改设备配置'),
+      ),
     );
   }
 

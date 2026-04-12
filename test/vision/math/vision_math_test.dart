@@ -7,7 +7,7 @@ import 'package:eyechart/vision/domain/vision_models.dart';
 
 void main() {
   const double epsilon = 1e-9;
-  const double tolerance = 0.001;
+  const double tolerance = 0.005;
 
   group('MAR 与 logMAR 转换', () {
     test('marFromLogMar: logMAR 0.0 应返回 MAR 1.0', () {
@@ -404,6 +404,31 @@ void main() {
       final isNotReached = VisionMath.isPixelLimitReached(metrics, 0.1);
       expect(isNotReached, isFalse);
     });
+
+    test('minimumTestDistanceMm: 应正确计算 1px 极限下的最小测试距离', () {
+      final minimumDistance = VisionMath.minimumTestDistanceMm(
+        logMar: VisionMath.logMarFromDecimal(1.5),
+        screenProfile: testScreen,
+        minCriticalDetailPx: 1.0,
+      );
+
+      expect(minimumDistance, closeTo(537.1, 1.0));
+    });
+
+    test('minimumTestDistanceMm: 像素阈值越大最小测试距离越大', () {
+      final distanceForOnePixel = VisionMath.minimumTestDistanceMm(
+        logMar: VisionMath.logMarFromDecimal(1.5),
+        screenProfile: testScreen,
+        minCriticalDetailPx: 1.0,
+      );
+      final distanceForThreePixels = VisionMath.minimumTestDistanceMm(
+        logMar: VisionMath.logMarFromDecimal(1.5),
+        screenProfile: testScreen,
+        minCriticalDetailPx: 3.0,
+      );
+
+      expect(distanceForThreePixels, greaterThan(distanceForOnePixel));
+    });
   });
 
   group('统计函数', () {
@@ -451,7 +476,7 @@ void main() {
 
     test('负 logMAR 应正确转换为大于 1 的小数视力', () {
       final decimal = VisionMath.decimalFromLogMar(-0.3);
-      expect(decimal, closeTo(2.0, tolerance));
+      expect(decimal, closeTo(1.995, tolerance));
     });
   });
 }

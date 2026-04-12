@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../app/providers/app_providers.dart';
+import '../app/providers/device_config_provider.dart';
 import '../ui/pages/device_config_page.dart';
 import '../ui/pages/test_prepare_page.dart';
 import '../ui/pages/test_run_page.dart';
@@ -12,6 +15,11 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/',
       name: 'home',
+      builder: (context, state) => const LaunchGatePage(),
+    ),
+    GoRoute(
+      path: '/config',
+      name: 'config',
       builder: (context, state) => const DeviceConfigPage(),
     ),
     GoRoute(
@@ -78,6 +86,45 @@ final GoRouter appRouter = GoRouter(
     ),
   ),
 );
+
+class LaunchGatePage extends ConsumerStatefulWidget {
+  const LaunchGatePage({super.key});
+
+  @override
+  ConsumerState<LaunchGatePage> createState() => _LaunchGatePageState();
+}
+
+class _LaunchGatePageState extends ConsumerState<LaunchGatePage> {
+  bool _redirected = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final config = ref.watch(deviceConfigProvider);
+
+    if (!_redirected && config.isLoaded) {
+      _redirected = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+
+        if (config.hasValidConfig) {
+          ref.read(screenProfileProvider.notifier).state = config.toScreenProfile();
+          context.go('/prepare');
+          return;
+        }
+
+        context.go('/config');
+      });
+    }
+
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+}
 
 Widget _buildInvalidArgumentPage(
   BuildContext context, {

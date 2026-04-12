@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../app/providers/app_providers.dart';
+import '../../app/providers/db_providers.dart';
 import '../../app/test_session_controller.dart';
+import '../../data/services/test_persistence_service.dart';
 import '../../vision/domain/vision_enums.dart';
 import '../../vision/domain/vision_models.dart';
 import '../widgets/direction_pad.dart';
 import '../widgets/e_optotype_view.dart';
-import '../../app/providers/app_providers.dart';
 
 class TestRunPage extends ConsumerStatefulWidget {
   final TestConfig config;
@@ -134,12 +136,34 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
       );
     }
     if (!mounted) return;
-    _navigateToResult();
+    await _persistAndNavigateToResult();
   }
 
-  void _navigateToResult() {
+  Future<void> _persistAndNavigateToResult() async {
+    final sessionState = ref.read(testSessionControllerProvider);
     final controller = ref.read(testSessionControllerProvider.notifier);
     final result = controller.buildResult();
+    if (sessionState == null) {
+      _showErrorAndGoBack('测试会话不存在，无法保存结果');
+      return;
+    }
+
+    try {
+      await ref.read(testPersistenceServiceProvider).saveCompletedSession(
+            sessionState: sessionState,
+            result: result,
+          );
+      ref.invalidate(testSessionsProvider);
+      await ref.read(testSessionsProvider.future);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('保存测试结果失败：$error')),
+      );
+      return;
+    }
+
+    if (!mounted) return;
     context.go('/result', extra: result);
   }
 
@@ -246,7 +270,7 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
         color: theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),

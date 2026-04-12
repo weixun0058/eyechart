@@ -17,7 +17,7 @@ class TestConfigState {
     this.testMode = TestMode.isolated,
     this.inputMode = InputMode.touchButtons,
     this.startLogMar = 0.5,
-    this.minCriticalDetailPx = 2.0,
+    this.minCriticalDetailPx = 1.0,
     this.isValid = true,
   });
 
@@ -54,9 +54,9 @@ class TestConfigState {
       stepLogMar: 0.1,
       requiredCorrectForStepDown: 3,
       allowedWrongForStepUp: 1,
-      requiredReversalCount: 3,
+      requiredReversalCount: 6,
       maxQuestionCount: 30,
-      answerTimeLimitMs: 10000,
+      answerTimeLimitMs: 3000,
       minCriticalDetailPx: minCriticalDetailPx,
       enableEnvironmentCheck: true,
       enablePixelLimitProtection: true,

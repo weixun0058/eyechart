@@ -310,7 +310,7 @@ void main() {
 
   group('VisionMath.isPixelLimitReached', () {
     test('应正确判断像素限制', () {
-      final metricsAboveLimit = RenderMetrics(
+      const metricsAboveLimit = RenderMetrics(
         testDistanceMm: 6000.0,
         optotypeSizeMm: 10.0,
         detailSizeMm: 2.0,
@@ -322,7 +322,7 @@ void main() {
         pixelLimitReached: false,
       );
 
-      final metricsBelowLimit = RenderMetrics(
+      const metricsBelowLimit = RenderMetrics(
         testDistanceMm: 6000.0,
         optotypeSizeMm: 10.0,
         detailSizeMm: 2.0,
@@ -339,7 +339,7 @@ void main() {
     });
 
     test('临界值判断应为 < 而非 <=', () {
-      final metrics = RenderMetrics(
+      const metrics = RenderMetrics(
         testDistanceMm: 6000.0,
         optotypeSizeMm: 10.0,
         detailSizeMm: 2.0,

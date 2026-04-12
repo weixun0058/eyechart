@@ -82,7 +82,7 @@ class StaircaseEstimator {
     }
 
     final slice = _takeLast(reversals, lastN).map((item) => item.logMar);
-    return VisionMath.mean(slice);
+    return VisionMath.median(slice);
   }
 
   static double calculateReversalStdDev(
@@ -97,17 +97,76 @@ class StaircaseEstimator {
     return VisionMath.standardDeviation(slice);
   }
 
+  static double? estimateConfirmedLineLogMar(
+    List<QuestionRecord> questions, {
+    int minSamplesPerLevel = 3,
+    double minAccuracy = 0.6,
+  }) {
+    if (questions.isEmpty) {
+      return null;
+    }
+
+    final statsByLevel = <int, _LevelStats>{};
+    for (final item in questions) {
+      final key = _logMarKey(item.targetLogMar);
+      final stats = statsByLevel[key] ?? const _LevelStats();
+      statsByLevel[key] = stats.add(isCorrect: item.isCorrect);
+    }
+
+    double? bestConfirmedLogMar;
+    for (final entry in statsByLevel.entries) {
+      final stats = entry.value;
+      if (stats.total < minSamplesPerLevel) {
+        continue;
+      }
+      if (stats.accuracy < minAccuracy) {
+        continue;
+      }
+
+      final logMar = _logMarFromKey(entry.key);
+      if (bestConfirmedLogMar == null || logMar < bestConfirmedLogMar) {
+        bestConfirmedLogMar = logMar;
+      }
+    }
+
+    return bestConfirmedLogMar;
+  }
+
   static EyeTestResult buildEyeTestResult({
     required EyeSide eyeSide,
     required List<QuestionRecord> questions,
     required List<ReversalPoint> reversals,
     required bool pixelLimitEncountered,
     int lastN = 4,
+    int minSamplesPerLevel = 3,
+    double minAccuracyForConfirmedLevel = 0.6,
   }) {
-    final estimatedLogMar = estimateThresholdLogMar(
-      reversals,
-      lastN: lastN,
+    final confirmedLineLogMar = estimateConfirmedLineLogMar(
+      questions,
+      minSamplesPerLevel: minSamplesPerLevel,
+      minAccuracy: minAccuracyForConfirmedLevel,
     );
+
+    final reversalBasedLogMar = reversals.isEmpty
+        ? (confirmedLineLogMar ??
+            (questions.isEmpty
+                ? null
+                : questions.map((q) => q.targetLogMar).reduce((a, b) => a < b ? a : b)))
+        : estimateThresholdLogMar(
+            reversals,
+            lastN: lastN,
+          );
+
+    if (reversalBasedLogMar == null) {
+      throw StateError('无法计算测试结果：缺少反转点与题目记录');
+    }
+
+    final estimatedLogMar = confirmedLineLogMar == null
+        ? reversalBasedLogMar
+        : (reversalBasedLogMar < confirmedLineLogMar
+            ? reversalBasedLogMar
+            : confirmedLineLogMar);
+
     final correctQuestions = questions.where((item) => item.isCorrect).length;
     final totalQuestions = questions.length;
     final accuracy =
@@ -153,5 +212,32 @@ class StaircaseEstimator {
       return List<T>.from(items);
     }
     return items.sublist(items.length - safeCount);
+  }
+
+  static int _logMarKey(double logMar) {
+    return (logMar * 1000).round();
+  }
+
+  static double _logMarFromKey(int key) {
+    return key / 1000.0;
+  }
+}
+
+class _LevelStats {
+  final int total;
+  final int correct;
+
+  const _LevelStats({
+    this.total = 0,
+    this.correct = 0,
+  });
+
+  double get accuracy => total == 0 ? 0.0 : correct / total;
+
+  _LevelStats add({required bool isCorrect}) {
+    return _LevelStats(
+      total: total + 1,
+      correct: correct + (isCorrect ? 1 : 0),
+    );
   }
 }

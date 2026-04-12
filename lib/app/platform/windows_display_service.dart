@@ -54,12 +54,12 @@ class WindowsDisplayService implements PlatformDisplayService {
   bool _initialized = false;
   DisplayInfo? _displayInfo;
 
-  static const int MDT_EFFECTIVE_DPI = 0;
-  static const int MDT_ANGULAR_DPI = 1;
-  static const int MDT_RAW_DPI = 2;
-  static const int MONITOR_DEFAULTTONEAREST = 2;
-  static const int LOGPIXELSX = 88;
-  static const int LOGPIXELSY = 90;
+  static const int mdtEffectiveDpi = 0;
+  static const int mdtAngularDpi = 1;
+  static const int mdtRawDpi = 2;
+  static const int monitorDefaultToNearest = 2;
+  static const int logPixelsX = 88;
+  static const int logPixelsY = 90;
 
   DynamicLibrary? _user32;
   DynamicLibrary? _gdi32;
@@ -144,19 +144,19 @@ class WindowsDisplayService implements PlatformDisplayService {
     try {
       final hwnd = _getWindowHandle();
       if (hwnd != 0) {
-        final monitor = _monitorFromWindow!(hwnd, MONITOR_DEFAULTTONEAREST);
+        final monitor = _monitorFromWindow!(hwnd, monitorDefaultToNearest);
         
         final dpiX = calloc<Uint32>();
         final dpiY = calloc<Uint32>();
         
         try {
-          final result = _getDpiForMonitor!(monitor, MDT_EFFECTIVE_DPI, dpiX, dpiY);
+          final result = _getDpiForMonitor!(monitor, mdtEffectiveDpi, dpiX, dpiY);
           if (result == 0) {
             final effectiveDpi = dpiX.value.toDouble();
             _systemScaleFactor = effectiveDpi / 96.0;
           }
 
-          final rawResult = _getDpiForMonitor!(monitor, MDT_RAW_DPI, dpiX, dpiY);
+          final rawResult = _getDpiForMonitor!(monitor, mdtRawDpi, dpiX, dpiY);
           if (rawResult == 0) {
             _rawDpi = dpiX.value.toDouble();
           }
@@ -176,8 +176,8 @@ class WindowsDisplayService implements PlatformDisplayService {
     try {
       final hdc = _getDC!(0);
       if (hdc != 0) {
-        final dpiX = _getDeviceCaps!(hdc, LOGPIXELSX);
-        _getDeviceCaps!(hdc, LOGPIXELSY);
+        final dpiX = _getDeviceCaps!(hdc, logPixelsX);
+        _getDeviceCaps!(hdc, logPixelsY);
         _rawDpi = dpiX.toDouble();
         _systemScaleFactor = _rawDpi / 96.0;
         _releaseDC!(0, hdc);

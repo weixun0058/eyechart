@@ -12,6 +12,7 @@ class TestSessionState {
   final StaircaseState staircaseState;
   final List<QuestionRecord> questions;
   final OptotypeDirection currentDirection;
+  final DateTime startedAt;
   final DateTime questionShownAt;
   final bool isFinished;
   final SessionEndReason? endReason;
@@ -24,6 +25,7 @@ class TestSessionState {
     required this.staircaseState,
     required this.questions,
     required this.currentDirection,
+    required this.startedAt,
     required this.questionShownAt,
     this.isFinished = false,
     this.endReason,
@@ -50,6 +52,7 @@ class TestSessionState {
     StaircaseState? staircaseState,
     List<QuestionRecord>? questions,
     OptotypeDirection? currentDirection,
+    DateTime? startedAt,
     DateTime? questionShownAt,
     bool? isFinished,
     SessionEndReason? endReason,
@@ -62,11 +65,11 @@ class TestSessionState {
       staircaseState: staircaseState ?? this.staircaseState,
       questions: questions ?? this.questions,
       currentDirection: currentDirection ?? this.currentDirection,
+      startedAt: startedAt ?? this.startedAt,
       questionShownAt: questionShownAt ?? this.questionShownAt,
       isFinished: isFinished ?? this.isFinished,
       endReason: endReason ?? this.endReason,
-      pixelLimitEncountered:
-          pixelLimitEncountered ?? this.pixelLimitEncountered,
+      pixelLimitEncountered: pixelLimitEncountered ?? this.pixelLimitEncountered,
       currentRenderMetrics: currentRenderMetrics ?? this.currentRenderMetrics,
     );
   }
@@ -83,6 +86,7 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
   }) {
     final initialState = StaircaseEstimator.initialState(config);
     final direction = _generateRandomDirection();
+    final startedAt = DateTime.now();
     final renderMetrics = VisionMath.calculateRenderMetrics(
       logMar: initialState.currentLogMar,
       testDistanceMm: config.testDistanceMm,
@@ -96,7 +100,8 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
       staircaseState: initialState,
       questions: const [],
       currentDirection: direction,
-      questionShownAt: DateTime.now(),
+      startedAt: startedAt,
+      questionShownAt: startedAt,
       currentRenderMetrics: renderMetrics,
     );
   }
@@ -126,19 +131,19 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
   }
 
   AnswerResult submitAnswer(OptotypeDirection userAnswer) {
-    return _submitAnswerInternal(userAnswer);
+    return _submitAnswerInternal(userAnswer: userAnswer);
   }
 
   AnswerResult submitCannotSee() {
-    return _submitAnswerInternal(null);
+    return _submitAnswerInternal(userAnswer: null);
   }
 
-  AnswerResult _submitAnswerInternal(OptotypeDirection? userAnswer) {
+  AnswerResult _submitAnswerInternal({required OptotypeDirection? userAnswer}) {
     if (state == null || state!.isFinished) {
       return AnswerResult.invalid;
     }
 
-    final isCorrect = userAnswer == state!.currentDirection;
+    final isCorrect = userAnswer != null && userAnswer == state!.currentDirection;
     final answeredAt = DateTime.now();
     final responseTimeMs =
         answeredAt.difference(state!.questionShownAt).inMilliseconds;
@@ -208,9 +213,7 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
         pixelLimitEncountered: pixelLimitReached,
         currentRenderMetrics: nextRenderMetrics,
       );
-      return isCorrect
-          ? AnswerResult.correctFinished
-          : AnswerResult.wrongFinished;
+      return isCorrect ? AnswerResult.correctFinished : AnswerResult.wrongFinished;
     }
 
     final nextDirection = _generateRandomDirection();
@@ -236,6 +239,7 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
       questions: state!.questions,
       reversals: state!.staircaseState.reversals,
       pixelLimitEncountered: state!.pixelLimitEncountered,
+      minSamplesPerLevel: state!.config.requiredCorrectForStepDown,
     );
   }
 
