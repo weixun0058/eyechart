@@ -236,6 +236,7 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
 
     return StaircaseEstimator.buildEyeTestResult(
       eyeSide: state!.config.eyeSide,
+      testMode: state!.config.testMode,
       questions: state!.questions,
       reversals: state!.staircaseState.reversals,
       pixelLimitEncountered: state!.pixelLimitEncountered,

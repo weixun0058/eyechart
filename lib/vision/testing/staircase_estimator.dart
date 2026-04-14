@@ -134,6 +134,7 @@ class StaircaseEstimator {
 
   static EyeTestResult buildEyeTestResult({
     required EyeSide eyeSide,
+    required TestMode testMode,
     required List<QuestionRecord> questions,
     required List<ReversalPoint> reversals,
     required bool pixelLimitEncountered,
@@ -183,6 +184,7 @@ class StaircaseEstimator {
 
     return EyeTestResult(
       eyeSide: eyeSide,
+      testMode: testMode,
       estimatedLogMar: estimatedLogMar,
       decimalAcuity: VisionMath.decimalFromLogMar(estimatedLogMar),
       fivePointAcuity: VisionMath.fivePointFromLogMar(estimatedLogMar),

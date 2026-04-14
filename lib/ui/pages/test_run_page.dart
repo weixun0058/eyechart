@@ -333,17 +333,26 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
 
     final viewDevicePixelRatio = View.of(context).devicePixelRatio;
     final optotypeSizeLogicalPx =
-        renderMetrics.optotypeWidthPx / viewDevicePixelRatio;
+        (renderMetrics.optotypeWidthPx / viewDevicePixelRatio)
+            .clamp(1.0, 300.0)
+            .toDouble();
 
     return Center(
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        child: EOptotypeView(
-          size: optotypeSizeLogicalPx.clamp(1.0, 300.0),
-          direction: state.currentDirection,
-          color: _showFeedback
-              ? (_isCorrect ? Colors.green : Colors.red)
-              : Colors.black,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            child: EOptotypeView(
+              size: optotypeSizeLogicalPx,
+              direction: state.currentDirection,
+              testMode: state.config.testMode,
+              color: _showFeedback
+                  ? (_isCorrect ? Colors.green : Colors.red)
+                  : Colors.black,
+            ),
+          ),
         ),
       ),
     );
@@ -351,6 +360,12 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
 
   Widget _buildControlArea(TestSessionState state) {
     final inputMode = state.config.inputMode;
+    final promptText = state.config.testMode == TestMode.crowded
+        ? '请选择中央 E 字开口方向'
+        : '请选择 E 字开口方向';
+    final modeHintText = state.config.testMode == TestMode.crowded
+        ? '拥挤模式已启用：中央目标周围会显示干扰条'
+        : '孤立模式已启用：仅显示单个目标视标';
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -358,8 +373,15 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            '请选择 E 字开口方向',
+            promptText,
             style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            modeHintText,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[600],
+                ),
           ),
           const SizedBox(height: 16),
           if (inputMode == InputMode.touchButtons ||

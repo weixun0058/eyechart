@@ -725,12 +725,14 @@ void main() {
 
         final result = StaircaseEstimator.buildEyeTestResult(
           eyeSide: EyeSide.right,
+          testMode: TestMode.isolated,
           questions: questions,
           reversals: reversals,
           pixelLimitEncountered: false,
         );
 
         expect(result.eyeSide, equals(EyeSide.right));
+        expect(result.testMode, equals(TestMode.isolated));
         expect(result.estimatedLogMar, equals(0.25));
         expect(result.totalQuestions, equals(2));
         expect(result.correctQuestions, equals(1));
@@ -757,6 +759,7 @@ void main() {
 
         final result = StaircaseEstimator.buildEyeTestResult(
           eyeSide: EyeSide.right,
+          testMode: TestMode.isolated,
           questions: [],
           reversals: reversals,
           pixelLimitEncountered: false,
@@ -783,11 +786,13 @@ void main() {
 
         final result = StaircaseEstimator.buildEyeTestResult(
           eyeSide: EyeSide.right,
+          testMode: TestMode.crowded,
           questions: [],
           reversals: reversals,
           pixelLimitEncountered: false,
         );
 
+        expect(result.testMode, equals(TestMode.crowded));
         expect(result.retestRecommended, isFalse);
       });
 
@@ -803,6 +808,7 @@ void main() {
 
         final result = StaircaseEstimator.buildEyeTestResult(
           eyeSide: EyeSide.left,
+          testMode: TestMode.isolated,
           questions: [],
           reversals: reversals,
           pixelLimitEncountered: false,
@@ -875,6 +881,7 @@ void main() {
 
         final result = StaircaseEstimator.buildEyeTestResult(
           eyeSide: EyeSide.right,
+          testMode: TestMode.isolated,
           questions: questions,
           reversals: const [],
           pixelLimitEncountered: false,
@@ -943,6 +950,7 @@ void main() {
 
         final result = StaircaseEstimator.buildEyeTestResult(
           eyeSide: EyeSide.right,
+          testMode: TestMode.isolated,
           questions: questions,
           reversals: reversals,
           pixelLimitEncountered: false,

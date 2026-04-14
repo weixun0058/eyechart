@@ -369,6 +369,7 @@ class TestResultPage extends ConsumerWidget {
     final distanceText = sessionState == null
         ? '--'
         : ResultInterpreter.formatTestDistance(sessionState.config.testDistanceMm);
+    final testModeText = ResultInterpreter.getTestModeLabel(result.testMode);
     final endReasonText = sessionState?.endReason == null
         ? '--'
         : ResultInterpreter.getEndReasonLabel(sessionState!.endReason!);
@@ -405,6 +406,13 @@ class TestResultPage extends ConsumerWidget {
               icon: Icons.straighten,
               label: '测试距离',
               value: distanceText,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              context,
+              icon: Icons.tune,
+              label: '测试模式',
+              value: testModeText,
             ),
             const SizedBox(height: 12),
             _buildInfoRow(

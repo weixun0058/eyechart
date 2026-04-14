@@ -41,6 +41,7 @@ void main() {
       expect(sessionId, equals('session-001'));
       expect(savedSession, isNotNull);
       expect(savedSession!.eyeSide, equals('right'));
+      expect(savedSession.testMode, equals('isolated'));
       expect(savedSession.requiredReversalCount, equals(6));
       expect(savedSession.answerTimeLimitMs, equals(3000));
       expect(savedSession.minCriticalDetailPx, equals(3.0));
@@ -49,6 +50,7 @@ void main() {
       expect(savedSession.endReason, equals('thresholdReached'));
       expect(savedQuestions, hasLength(2));
       expect(savedQuestions.first.questionIndex, equals(0));
+      expect(savedQuestions.first.testMode, equals('isolated'));
       expect(savedQuestions.first.displayedDirection, equals('up'));
       expect(savedQuestions.last.userAnswer, equals('down'));
       expect(allSessions, hasLength(1));
@@ -91,16 +93,33 @@ void main() {
       expect(refreshedSessions, hasLength(1));
       expect(refreshedSessions.single.id, equals('session-001'));
     });
+
+    test('拥挤模式会写入会话与题目记录', () async {
+      final sessionId = await service.saveCompletedSession(
+        sessionState: _buildFinishedSessionState(testMode: TestMode.crowded),
+        result: _buildEyeTestResult(testMode: TestMode.crowded),
+      );
+
+      final savedSession = await dao.getSessionById(sessionId);
+      final savedQuestions = await dao.getQuestionsBySessionId(sessionId);
+
+      expect(savedSession, isNotNull);
+      expect(savedSession!.testMode, equals('crowded'));
+      expect(savedQuestions, isNotEmpty);
+      expect(savedQuestions.every((question) => question.testMode == 'crowded'), isTrue);
+    });
   });
 }
 
-TestSessionState _buildFinishedSessionState() {
+TestSessionState _buildFinishedSessionState({
+  TestMode testMode = TestMode.isolated,
+}) {
   final startedAt = DateTime(2026, 4, 10, 9, 0, 0);
   final firstShownAt = startedAt.add(const Duration(seconds: 1));
   final secondShownAt = startedAt.add(const Duration(seconds: 5));
 
   return TestSessionState(
-    config: _buildTestConfig(),
+    config: _buildTestConfig(testMode: testMode),
     screenProfile: _buildScreenProfile(),
     staircaseState: const StaircaseState(
       currentLogMar: 0.3,
@@ -121,7 +140,7 @@ TestSessionState _buildFinishedSessionState() {
       QuestionRecord(
         index: 0,
         eyeSide: EyeSide.right,
-        testMode: TestMode.isolated,
+        testMode: testMode,
         targetLogMar: 0.5,
         targetDecimalAcuity: 0.32,
         targetFivePointAcuity: 4.5,
@@ -137,7 +156,7 @@ TestSessionState _buildFinishedSessionState() {
       QuestionRecord(
         index: 1,
         eyeSide: EyeSide.right,
-        testMode: TestMode.isolated,
+        testMode: testMode,
         targetLogMar: 0.4,
         targetDecimalAcuity: 0.4,
         targetFivePointAcuity: 4.6,
@@ -161,11 +180,13 @@ TestSessionState _buildFinishedSessionState() {
   );
 }
 
-TestConfig _buildTestConfig() {
-  return const TestConfig(
+TestConfig _buildTestConfig({
+  TestMode testMode = TestMode.isolated,
+}) {
+  return TestConfig(
     id: 'session-001',
     eyeSide: EyeSide.right,
-    testMode: TestMode.isolated,
+    testMode: testMode,
     inputMode: InputMode.touchButtons,
     testDistanceMm: 400,
     startLogMar: 0.5,
@@ -213,9 +234,12 @@ RenderMetrics _buildRenderMetrics() {
   );
 }
 
-EyeTestResult _buildEyeTestResult() {
-  return const EyeTestResult(
+EyeTestResult _buildEyeTestResult({
+  TestMode testMode = TestMode.isolated,
+}) {
+  return EyeTestResult(
     eyeSide: EyeSide.right,
+    testMode: testMode,
     estimatedLogMar: 0.3,
     decimalAcuity: 0.5,
     fivePointAcuity: 4.7,

@@ -38,9 +38,9 @@
 - 验证：
   - 真机/模拟器手动跑通一次：历史页出现刚完成会话
 
-## 任务 5：参数默认值统一（以设计稿为准）
+## 任务 5：参数默认值统一（以统一标准为准）
 - 修改文件：lib/app/providers/test_config_provider.dart
-  - 覆盖默认值：requiredReversalCount=6、answerTimeLimitMs=3000、minCriticalDetailPx=3.0
+  - 覆盖默认值：protocol=ETDRS、testDistanceMm=4000、nearFallbackDistanceMm=1000、optotypesPerLine=5、maxErrorsPerLine=2、answerTimeLimitMs=3000、minCriticalDetailPx=3.0、maxQuestionCount=50
 - 调整/移除：lib/app/providers/app_providers.dart 中 testConfigProvider
   - 将所有引用处替换为 test_config_provider.dart 中的权威 Provider
 - 验证：
@@ -68,4 +68,3 @@
 ## 任务 8：文档更新
 - 更新 Android-only 规格、参数默认值说明
 - 在仓库 docs/ 下新增或更新说明，链接至截图证据
-

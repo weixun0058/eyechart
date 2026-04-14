@@ -27,7 +27,7 @@
 
 ### 开发日常
 ```powershell
-flutter test --no-pub test/vision/testing/staircase_estimator_test.dart
+flutter test --no-pub test/vision/testing/
 flutter test --no-pub test/vision/math/
 ```
 

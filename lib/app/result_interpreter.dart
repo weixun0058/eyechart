@@ -149,6 +149,15 @@ class ResultInterpreter {
     }
   }
 
+  static String getTestModeLabel(TestMode testMode) {
+    switch (testMode) {
+      case TestMode.isolated:
+        return '孤立模式';
+      case TestMode.crowded:
+        return '拥挤模式';
+    }
+  }
+
   static String getAcuityInterpretation(double decimalAcuity) {
     if (decimalAcuity >= 1.0) {
       return '视力正常';

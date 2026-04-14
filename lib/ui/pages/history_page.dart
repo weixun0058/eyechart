@@ -111,6 +111,9 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
   Widget _buildSessionCard(TestSessionRow session) {
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
     final eyeSideText = _getEyeSideText(session.eyeSide);
+    final testModeText = _getTestModeText(session.testMode);
+    final testModeColor =
+        session.testMode == 'crowded' ? Colors.deepPurple : Colors.teal;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -183,6 +186,14 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               const SizedBox(height: 8),
               Row(
                 children: [
+                  _buildInfoChip(
+                    icon: session.testMode == 'crowded'
+                        ? Icons.grid_view_rounded
+                        : Icons.center_focus_strong,
+                    label: testModeText,
+                    color: testModeColor,
+                  ),
+                  const SizedBox(width: 8),
                   _buildInfoChip(
                     icon: Icons.quiz_outlined,
                     label: '${session.totalQuestions}题',
@@ -461,6 +472,17 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
         return Colors.purple;
       default:
         return Colors.grey;
+    }
+  }
+
+  String _getTestModeText(String testMode) {
+    switch (testMode) {
+      case 'isolated':
+        return '单字模式';
+      case 'crowded':
+        return '拥挤模式';
+      default:
+        return testMode;
     }
   }
 }

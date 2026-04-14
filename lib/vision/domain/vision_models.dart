@@ -269,6 +269,7 @@ class StaircaseState {
 
 class EyeTestResult {
   final EyeSide eyeSide;
+  final TestMode testMode;
   final double estimatedLogMar;
   final double decimalAcuity;
   final double fivePointAcuity;
@@ -282,6 +283,7 @@ class EyeTestResult {
 
   const EyeTestResult({
     required this.eyeSide,
+    required this.testMode,
     required this.estimatedLogMar,
     required this.decimalAcuity,
     required this.fivePointAcuity,

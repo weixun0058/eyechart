@@ -1,5 +1,7 @@
 # Android-only 可跟踪任务清单
 
+> 归档说明：本文件用于保留历史执行证据，不作为当前测试标准来源。当前标准以 `临床视力测试标准基线.md`、`项目规划.md`、`视力学公式与数据结构设计稿.md` 为准。
+
 ## 使用规则
 - 状态仅允许：`todo` / `doing` / `blocked` / `done`
 - 每次状态变化都要更新“最后更新时间”和“证据”
@@ -20,14 +22,14 @@
 ## 开发日常命令序列（A1.2）
 
 ```powershell
-flutter test --no-pub test/vision/testing/staircase_estimator_test.dart
+flutter test --no-pub test/vision/testing/
 flutter test --no-pub test/vision/math/
 ```
 
 ## 提测前最小回归命令序列（A1.3）
 
 ```powershell
-flutter test --no-pub test/vision/testing/staircase_estimator_test.dart
+flutter test --no-pub test/vision/testing/
 flutter test --no-pub test/vision/math/
 flutter build apk --debug
 ```

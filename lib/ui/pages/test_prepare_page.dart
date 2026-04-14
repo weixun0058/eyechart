@@ -53,7 +53,7 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
           children: [
             _buildConfigSection(theme, config),
             const SizedBox(height: 24),
-            _buildDeviceConfigButton(context),
+            _buildQuickAccessButtons(context),
             const SizedBox(height: 16),
             _buildStartButton(context, config),
             const SizedBox(height: 24),
@@ -215,7 +215,6 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
               value: TestMode.crowded,
               label: Text('拥挤模式'),
               icon: Icon(Icons.grid_view),
-              enabled: false,
             ),
           ],
           selected: {config.testMode},
@@ -223,16 +222,12 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
             if (selection.isEmpty) {
               return;
             }
-            final selectedMode = selection.first;
-            if (selectedMode == TestMode.crowded) {
-              return;
-            }
-            ref.read(testConfigProvider.notifier).setTestMode(selectedMode);
+            ref.read(testConfigProvider.notifier).setTestMode(selection.first);
           },
         ),
         const SizedBox(height: 8),
         Text(
-          '孤立模式为当前可用模式；拥挤模式入口已预留，后续开放。',
+          '孤立模式显示单个 E 视标；拥挤模式会在中央目标四周加入干扰条，更接近整行识别场景。',
           style: theme.textTheme.bodySmall?.copyWith(
             color: Colors.grey[700],
           ),
@@ -326,15 +321,31 @@ class _TestPreparePageState extends ConsumerState<TestPreparePage> {
     );
   }
 
-  Widget _buildDeviceConfigButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: OutlinedButton.icon(
-        onPressed: () => context.go('/config'),
-        icon: const Icon(Icons.devices_outlined),
-        label: const Text('修改设备配置'),
-      ),
+  Widget _buildQuickAccessButtons(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: () => context.go('/history'),
+              icon: const Icon(Icons.history),
+              label: const Text('历史记录'),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: SizedBox(
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: () => context.go('/config'),
+              icon: const Icon(Icons.devices_outlined),
+              label: const Text('修改设备配置'),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
