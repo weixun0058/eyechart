@@ -28,6 +28,12 @@ enum SessionEndReason {
   bestAcuityReached,
   pixelLimitReached,
   userAborted,
+  protocolCompleted,
+}
+
+enum LineDirection {
+  down,
+  up,
 }
 
 enum StepDirection {

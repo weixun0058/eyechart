@@ -33,8 +33,13 @@ class ResultInterpreter {
       factors.add('正确率偏低（${(result.accuracy * 100).toStringAsFixed(1)}%）');
     }
 
-    if (result.reversalStdDev > 0.15) {
-      factors.add('反转点波动较大');
+    if (result.lineReversals.length >= 2) {
+      final logMarValues = result.lineReversals.map((r) => r.logMar).toList();
+      final range = logMarValues.reduce((a, b) => a > b ? a : b) -
+          logMarValues.reduce((a, b) => a < b ? a : b);
+      if (range > 0.3) {
+        factors.add('行级反转波动较大');
+      }
     }
 
     if (result.pixelLimitEncountered) {
@@ -146,6 +151,8 @@ class ResultInterpreter {
         return '达到屏幕像素限制';
       case SessionEndReason.userAborted:
         return '用户中止';
+      case SessionEndReason.protocolCompleted:
+        return '测试协议完成';
     }
   }
 
@@ -239,7 +246,7 @@ class ResultDisplayData {
       fivePointAcuityFormatted:
           ResultInterpreter.formatFivePointAcuity(result.fivePointAcuity),
       logMarFormatted:
-          ResultInterpreter.formatLogMar(result.estimatedLogMar),
+          ResultInterpreter.formatLogMar(result.equivalentLogMar),
       eyeSideLabel: ResultInterpreter.getEyeSideLabel(result.eyeSide),
       acuityInterpretation:
           ResultInterpreter.getAcuityInterpretation(result.decimalAcuity),

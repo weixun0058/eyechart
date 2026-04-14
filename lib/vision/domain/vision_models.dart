@@ -66,9 +66,14 @@ class TestConfig {
   final double minLogMar;
   final double maxLogMar;
   final double stepLogMar;
-  final int requiredCorrectForStepDown;
-  final int allowedWrongForStepUp;
-  final int requiredReversalCount;
+
+  // 新版测试参数（可配置）
+  final int optotypesPerLine;
+  final int consecutiveCorrectToPass;   // 前几题连续对直接通过行
+  final int consecutiveWrongToFail;     // 连续错几题直接失败行
+  final int maxErrorsPerLine;           // 整行最大错误数（完整测试时）
+  final int requiredLineReversals;      // 需要几次下行→上行反转终止
+
   final int maxQuestionCount;
   final int answerTimeLimitMs;
   final double minCriticalDetailPx;
@@ -85,10 +90,12 @@ class TestConfig {
     required this.minLogMar,
     required this.maxLogMar,
     required this.stepLogMar,
-    required this.requiredCorrectForStepDown,
-    required this.allowedWrongForStepUp,
-    required this.requiredReversalCount,
-    required this.maxQuestionCount,
+    this.optotypesPerLine = 5,
+    this.consecutiveCorrectToPass = 3,
+    this.consecutiveWrongToFail = 2,
+    this.maxErrorsPerLine = 1,
+    this.requiredLineReversals = 3,
+    this.maxQuestionCount = 999,
     required this.answerTimeLimitMs,
     required this.minCriticalDetailPx,
     required this.enableEnvironmentCheck,
@@ -105,9 +112,11 @@ class TestConfig {
     double? minLogMar,
     double? maxLogMar,
     double? stepLogMar,
-    int? requiredCorrectForStepDown,
-    int? allowedWrongForStepUp,
-    int? requiredReversalCount,
+    int? optotypesPerLine,
+    int? consecutiveCorrectToPass,
+    int? consecutiveWrongToFail,
+    int? maxErrorsPerLine,
+    int? requiredLineReversals,
     int? maxQuestionCount,
     int? answerTimeLimitMs,
     double? minCriticalDetailPx,
@@ -124,10 +133,11 @@ class TestConfig {
       minLogMar: minLogMar ?? this.minLogMar,
       maxLogMar: maxLogMar ?? this.maxLogMar,
       stepLogMar: stepLogMar ?? this.stepLogMar,
-      requiredCorrectForStepDown:
-          requiredCorrectForStepDown ?? this.requiredCorrectForStepDown,
-      allowedWrongForStepUp: allowedWrongForStepUp ?? this.allowedWrongForStepUp,
-      requiredReversalCount: requiredReversalCount ?? this.requiredReversalCount,
+      optotypesPerLine: optotypesPerLine ?? this.optotypesPerLine,
+      consecutiveCorrectToPass: consecutiveCorrectToPass ?? this.consecutiveCorrectToPass,
+      consecutiveWrongToFail: consecutiveWrongToFail ?? this.consecutiveWrongToFail,
+      maxErrorsPerLine: maxErrorsPerLine ?? this.maxErrorsPerLine,
+      requiredLineReversals: requiredLineReversals ?? this.requiredLineReversals,
       maxQuestionCount: maxQuestionCount ?? this.maxQuestionCount,
       answerTimeLimitMs: answerTimeLimitMs ?? this.answerTimeLimitMs,
       minCriticalDetailPx: minCriticalDetailPx ?? this.minCriticalDetailPx,
@@ -185,6 +195,8 @@ class QuestionRecord {
   final int index;
   final EyeSide eyeSide;
   final TestMode testMode;
+  final int lineIndex;
+  final int optotypeIndexInLine;
   final double targetLogMar;
   final double targetDecimalAcuity;
   final double targetFivePointAcuity;
@@ -201,6 +213,8 @@ class QuestionRecord {
     required this.index,
     required this.eyeSide,
     required this.testMode,
+    required this.lineIndex,
+    required this.optotypeIndexInLine,
     required this.targetLogMar,
     required this.targetDecimalAcuity,
     required this.targetFivePointAcuity,
@@ -215,6 +229,11 @@ class QuestionRecord {
   });
 }
 
+/// 逐题反转点（已废弃）
+///
+/// 请使用 [LineReversalPoint] 替代。
+/// 保留此类仅用于迁移期兼容。
+@Deprecated('请使用 LineReversalPoint 替代')
 class ReversalPoint {
   final int questionIndex;
   final double logMar;
@@ -229,6 +248,7 @@ class ReversalPoint {
   });
 }
 
+@Deprecated('请使用 LineProgressState 替代')
 class StaircaseState {
   final double currentLogMar;
   final int consecutiveCorrectCount;
@@ -267,31 +287,138 @@ class StaircaseState {
   }
 }
 
+/// 行级反转点记录
+class LineReversalPoint {
+  final int lineIndex;
+  final double logMar;
+  final LineDirection previousDirection;
+  final LineDirection currentDirection;
+  final int correctCount;
+  final int errorCount;
+
+  const LineReversalPoint({
+    required this.lineIndex,
+    required this.logMar,
+    required this.previousDirection,
+    required this.currentDirection,
+    required this.correctCount,
+    required this.errorCount,
+  });
+}
+
+/// 行级进度状态
+class LineProgressState {
+  final int currentLineIndex;
+  final double currentLogMar;
+  final int currentLinePresentedCount;
+  final int currentLineCorrectCount;
+  final int currentLineErrorCount;
+  final int totalPresentedCount;
+  final int totalCorrectCount;
+  final LineDirection lineDirection;
+  final int lineReversalCount;
+  final bool protocolCompleted;
+
+  // 新增：连续正确/错误计数（用于快速通过/失败判断）
+  final int consecutiveCorrectCount;
+  final int consecutiveWrongCount;
+
+  // 新增：最终确定的视力值
+  final double? determinedLogMar;
+
+  const LineProgressState({
+    required this.currentLineIndex,
+    required this.currentLogMar,
+    required this.currentLinePresentedCount,
+    required this.currentLineCorrectCount,
+    required this.currentLineErrorCount,
+    required this.totalPresentedCount,
+    required this.totalCorrectCount,
+    required this.lineDirection,
+    required this.lineReversalCount,
+    required this.protocolCompleted,
+    this.consecutiveCorrectCount = 0,
+    this.consecutiveWrongCount = 0,
+    this.determinedLogMar,
+  });
+
+  LineProgressState copyWith({
+    int? currentLineIndex,
+    double? currentLogMar,
+    int? currentLinePresentedCount,
+    int? currentLineCorrectCount,
+    int? currentLineErrorCount,
+    int? totalPresentedCount,
+    int? totalCorrectCount,
+    LineDirection? lineDirection,
+    int? lineReversalCount,
+    bool? protocolCompleted,
+    int? consecutiveCorrectCount,
+    int? consecutiveWrongCount,
+    double? determinedLogMar,
+  }) {
+    return LineProgressState(
+      currentLineIndex: currentLineIndex ?? this.currentLineIndex,
+      currentLogMar: currentLogMar ?? this.currentLogMar,
+      currentLinePresentedCount:
+          currentLinePresentedCount ?? this.currentLinePresentedCount,
+      currentLineCorrectCount:
+          currentLineCorrectCount ?? this.currentLineCorrectCount,
+      currentLineErrorCount:
+          currentLineErrorCount ?? this.currentLineErrorCount,
+      totalPresentedCount: totalPresentedCount ?? this.totalPresentedCount,
+      totalCorrectCount: totalCorrectCount ?? this.totalCorrectCount,
+      lineDirection: lineDirection ?? this.lineDirection,
+      lineReversalCount: lineReversalCount ?? this.lineReversalCount,
+      protocolCompleted: protocolCompleted ?? this.protocolCompleted,
+      consecutiveCorrectCount: consecutiveCorrectCount ?? this.consecutiveCorrectCount,
+      consecutiveWrongCount: consecutiveWrongCount ?? this.consecutiveWrongCount,
+      determinedLogMar: determinedLogMar ?? this.determinedLogMar,
+    );
+  }
+}
+
 class EyeTestResult {
   final EyeSide eyeSide;
   final TestMode testMode;
-  final double estimatedLogMar;
+
+  // ETDRS 风格结果
+  final double equivalentLogMar;
   final double decimalAcuity;
   final double fivePointAcuity;
+  final int etdrsLetterScore;
+  final double bestLineLogMar;
+  final List<LineReversalPoint> lineReversals;
+
   final int totalQuestions;
   final int correctQuestions;
   final double accuracy;
   final double meanResponseTimeMs;
-  final double reversalStdDev;
+
+  // 废弃的阶梯法字段（仅兼容保留）
+  @Deprecated('阶梯法已废弃，此字段不再使用')
+  final double? estimatedLogMar;
+  @Deprecated('阶梯法已废弃，此字段不再使用')
+  final double? reversalStdDev;
+
   final bool pixelLimitEncountered;
   final bool retestRecommended;
 
   const EyeTestResult({
     required this.eyeSide,
     required this.testMode,
-    required this.estimatedLogMar,
+    required this.equivalentLogMar,
     required this.decimalAcuity,
     required this.fivePointAcuity,
+    required this.etdrsLetterScore,
+    required this.bestLineLogMar,
+    required this.lineReversals,
     required this.totalQuestions,
     required this.correctQuestions,
     required this.accuracy,
     required this.meanResponseTimeMs,
-    required this.reversalStdDev,
+    @Deprecated('阶梯法已废弃，此字段不再使用') this.estimatedLogMar,
+    @Deprecated('阶梯法已废弃，此字段不再使用') this.reversalStdDev,
     required this.pixelLimitEncountered,
     required this.retestRecommended,
   });

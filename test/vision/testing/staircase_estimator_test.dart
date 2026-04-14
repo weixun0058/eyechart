@@ -19,9 +19,12 @@ void main() {
         minLogMar: -0.2,
         maxLogMar: 1.0,
         stepLogMar: 0.1,
-        requiredCorrectForStepDown: 3,
-        allowedWrongForStepUp: 1,
-        requiredReversalCount: 6,
+        // 新版测试参数（staircase_estimator 已废弃，使用硬编码值）
+        optotypesPerLine: 5,
+        consecutiveCorrectToPass: 3,
+        consecutiveWrongToFail: 2,
+        maxErrorsPerLine: 1,
+        requiredLineReversals: 6,
         maxQuestionCount: 50,
         answerTimeLimitMs: 5000,
         minCriticalDetailPx: 3.0,
@@ -355,10 +358,9 @@ void main() {
       });
 
       test('should reach threshold when reversal count meets requirement', () {
-        var state = StaircaseEstimator.initialState(
-          config.copyWith(requiredReversalCount: 2),
-        );
-        final shortConfig = config.copyWith(requiredReversalCount: 2);
+        // staircase_estimator 已废弃，requiredReversalCount 使用硬编码值 6
+        var state = StaircaseEstimator.initialState(config);
+        final shortConfig = config;
 
         for (var i = 0; i < 3; i++) {
           state = StaircaseEstimator.applyAnswer(
@@ -673,6 +675,8 @@ void main() {
             index: 0,
             eyeSide: EyeSide.right,
             testMode: TestMode.isolated,
+            lineIndex: 0,
+            optotypeIndexInLine: 0,
             targetLogMar: 0.5,
             targetDecimalAcuity: 0.316,
             targetFivePointAcuity: 4.5,
@@ -699,6 +703,8 @@ void main() {
             index: 1,
             eyeSide: EyeSide.right,
             testMode: TestMode.isolated,
+            lineIndex: 1,
+            optotypeIndexInLine: 0,
             targetLogMar: 0.4,
             targetDecimalAcuity: 0.398,
             targetFivePointAcuity: 4.6,
@@ -828,6 +834,8 @@ void main() {
               index: index,
               eyeSide: EyeSide.right,
               testMode: TestMode.isolated,
+              lineIndex: 1,
+              optotypeIndexInLine: index,
               targetLogMar: 0.4,
               targetDecimalAcuity: 0.4,
               targetFivePointAcuity: 4.6,
@@ -855,6 +863,8 @@ void main() {
               index: index,
               eyeSide: EyeSide.right,
               testMode: TestMode.isolated,
+              lineIndex: 2,
+              optotypeIndexInLine: index - 3,
               targetLogMar: 0.3,
               targetDecimalAcuity: 0.5,
               targetFivePointAcuity: 4.7,
@@ -898,6 +908,8 @@ void main() {
               index: index,
               eyeSide: EyeSide.right,
               testMode: TestMode.isolated,
+              lineIndex: 2,
+              optotypeIndexInLine: index,
               targetLogMar: 0.3,
               targetDecimalAcuity: 0.5,
               targetFivePointAcuity: 4.7,

@@ -52,10 +52,13 @@ class TestConfigState {
       minLogMar: -0.3,
       maxLogMar: 1.0,
       stepLogMar: 0.1,
-      requiredCorrectForStepDown: 3,
-      allowedWrongForStepUp: 1,
-      requiredReversalCount: 6,
-      maxQuestionCount: 30,
+      // 新版测试参数
+      optotypesPerLine: 5,
+      consecutiveCorrectToPass: 3,  // 前3题全对快速通过
+      consecutiveWrongToFail: 2,    // 连续2错快速失败
+      maxErrorsPerLine: 1,          // 完整测试时错误数≤1通过
+      requiredLineReversals: 3,     // 3次下行→上行反转终止
+      maxQuestionCount: 999,        // 不设上限
       answerTimeLimitMs: 3000,
       minCriticalDetailPx: minCriticalDetailPx,
       enableEnvironmentCheck: true,

@@ -44,10 +44,10 @@ class TestPersistenceService {
         minLogMar: sessionState.config.minLogMar,
         maxLogMar: sessionState.config.maxLogMar,
         stepLogMar: sessionState.config.stepLogMar,
-        requiredCorrectForStepDown:
-            sessionState.config.requiredCorrectForStepDown,
-        allowedWrongForStepUp: sessionState.config.allowedWrongForStepUp,
-        requiredReversalCount: sessionState.config.requiredReversalCount,
+        // 废弃参数已移除，保留默认值兼容
+        requiredCorrectForStepDown: 3,
+        allowedWrongForStepUp: 1,
+        requiredReversalCount: 6,
         maxQuestionCount: sessionState.config.maxQuestionCount,
         answerTimeLimitMs: sessionState.config.answerTimeLimitMs,
         minCriticalDetailPx: sessionState.config.minCriticalDetailPx,

@@ -47,7 +47,7 @@ void main() {
       expect(savedSession.minCriticalDetailPx, equals(3.0));
       expect(savedSession.totalQuestions, equals(2));
       expect(savedSession.correctQuestions, equals(1));
-      expect(savedSession.endReason, equals('thresholdReached'));
+      expect(savedSession.endReason, equals('protocolCompleted'));
       expect(savedQuestions, hasLength(2));
       expect(savedQuestions.first.questionIndex, equals(0));
       expect(savedQuestions.first.testMode, equals('isolated'));
@@ -121,26 +121,25 @@ TestSessionState _buildFinishedSessionState({
   return TestSessionState(
     config: _buildTestConfig(testMode: testMode),
     screenProfile: _buildScreenProfile(),
-    staircaseState: const StaircaseState(
+    lineProgressState: LineProgressState(
+      currentLineIndex: 2,
       currentLogMar: 0.3,
-      consecutiveCorrectCount: 0,
-      consecutiveWrongCount: 0,
-      lastStepDirection: StepDirection.down,
-      reversals: [
-        ReversalPoint(
-          questionIndex: 1,
-          logMar: 0.3,
-          previousDirection: StepDirection.up,
-          currentDirection: StepDirection.down,
-        ),
-      ],
-      thresholdReached: true,
+      currentLinePresentedCount: 0,
+      currentLineCorrectCount: 0,
+      currentLineErrorCount: 0,
+      totalPresentedCount: 2,
+      totalCorrectCount: 1,
+      lineDirection: LineDirection.down,
+      lineReversalCount: 1,
+      protocolCompleted: true,
     ),
     questions: [
       QuestionRecord(
         index: 0,
         eyeSide: EyeSide.right,
         testMode: testMode,
+        lineIndex: 0,
+        optotypeIndexInLine: 0,
         targetLogMar: 0.5,
         targetDecimalAcuity: 0.32,
         targetFivePointAcuity: 4.5,
@@ -157,6 +156,8 @@ TestSessionState _buildFinishedSessionState({
         index: 1,
         eyeSide: EyeSide.right,
         testMode: testMode,
+        lineIndex: 1,
+        optotypeIndexInLine: 0,
         targetLogMar: 0.4,
         targetDecimalAcuity: 0.4,
         targetFivePointAcuity: 4.6,
@@ -174,7 +175,7 @@ TestSessionState _buildFinishedSessionState({
     startedAt: startedAt,
     questionShownAt: secondShownAt,
     isFinished: true,
-    endReason: SessionEndReason.thresholdReached,
+    endReason: SessionEndReason.protocolCompleted,
     pixelLimitEncountered: false,
     currentRenderMetrics: _buildRenderMetrics(),
   );
@@ -193,9 +194,12 @@ TestConfig _buildTestConfig({
     minLogMar: -0.3,
     maxLogMar: 1.0,
     stepLogMar: 0.1,
-    requiredCorrectForStepDown: 3,
-    allowedWrongForStepUp: 1,
-    requiredReversalCount: 6,
+    // 新版测试参数
+    optotypesPerLine: 5,
+    consecutiveCorrectToPass: 3,
+    consecutiveWrongToFail: 2,
+    maxErrorsPerLine: 1,
+    requiredLineReversals: 2,
     maxQuestionCount: 30,
     answerTimeLimitMs: 3000,
     minCriticalDetailPx: 3.0,
@@ -240,14 +244,16 @@ EyeTestResult _buildEyeTestResult({
   return EyeTestResult(
     eyeSide: EyeSide.right,
     testMode: testMode,
-    estimatedLogMar: 0.3,
+    equivalentLogMar: 0.3,
     decimalAcuity: 0.5,
     fivePointAcuity: 4.7,
+    etdrsLetterScore: 31,
+    bestLineLogMar: 0.3,
+    lineReversals: const [],
     totalQuestions: 2,
     correctQuestions: 1,
     accuracy: 0.5,
     meanResponseTimeMs: 1350,
-    reversalStdDev: 0.04,
     pixelLimitEncountered: false,
     retestRecommended: false,
   );

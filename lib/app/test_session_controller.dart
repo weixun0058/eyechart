@@ -4,12 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../vision/domain/vision_enums.dart';
 import '../vision/domain/vision_models.dart';
 import '../vision/math/vision_math.dart';
-import '../vision/testing/staircase_estimator.dart';
+import '../vision/testing/adaptive_line_engine.dart';
 
 class TestSessionState {
   final TestConfig config;
   final ScreenProfile screenProfile;
-  final StaircaseState staircaseState;
+  final LineProgressState lineProgressState;
   final List<QuestionRecord> questions;
   final OptotypeDirection currentDirection;
   final DateTime startedAt;
@@ -22,7 +22,7 @@ class TestSessionState {
   const TestSessionState({
     required this.config,
     required this.screenProfile,
-    required this.staircaseState,
+    required this.lineProgressState,
     required this.questions,
     required this.currentDirection,
     required this.startedAt,
@@ -35,7 +35,7 @@ class TestSessionState {
 
   int get currentQuestionIndex => questions.length;
 
-  double get currentLogMar => staircaseState.currentLogMar;
+  double get currentLogMar => lineProgressState.currentLogMar;
 
   double get currentDecimalAcuity =>
       VisionMath.decimalFromLogMar(currentLogMar);
@@ -49,7 +49,7 @@ class TestSessionState {
   TestSessionState copyWith({
     TestConfig? config,
     ScreenProfile? screenProfile,
-    StaircaseState? staircaseState,
+    LineProgressState? lineProgressState,
     List<QuestionRecord>? questions,
     OptotypeDirection? currentDirection,
     DateTime? startedAt,
@@ -62,7 +62,7 @@ class TestSessionState {
     return TestSessionState(
       config: config ?? this.config,
       screenProfile: screenProfile ?? this.screenProfile,
-      staircaseState: staircaseState ?? this.staircaseState,
+      lineProgressState: lineProgressState ?? this.lineProgressState,
       questions: questions ?? this.questions,
       currentDirection: currentDirection ?? this.currentDirection,
       startedAt: startedAt ?? this.startedAt,
@@ -84,7 +84,7 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
     required TestConfig config,
     required ScreenProfile screenProfile,
   }) {
-    final initialState = StaircaseEstimator.initialState(config);
+    final initialState = AdaptiveLineEngine.initialState(config);
     final direction = _generateRandomDirection();
     final startedAt = DateTime.now();
     final renderMetrics = VisionMath.calculateRenderMetrics(
@@ -97,7 +97,7 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
     state = TestSessionState(
       config: config,
       screenProfile: screenProfile,
-      staircaseState: initialState,
+      lineProgressState: initialState,
       questions: const [],
       currentDirection: direction,
       startedAt: startedAt,
@@ -149,10 +149,16 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
         answeredAt.difference(state!.questionShownAt).inMilliseconds;
     final isTimeout = responseTimeMs > state!.config.answerTimeLimitMs;
 
+    // 计算当前行内序号
+    final currentLineIndex = state!.lineProgressState.currentLineIndex;
+    final optotypeIndexInLine = state!.lineProgressState.currentLinePresentedCount;
+
     final questionRecord = QuestionRecord(
       index: state!.questions.length,
       eyeSide: state!.config.eyeSide,
       testMode: state!.config.testMode,
+      lineIndex: currentLineIndex,
+      optotypeIndexInLine: optotypeIndexInLine,
       targetLogMar: state!.currentLogMar,
       targetDecimalAcuity: state!.currentDecimalAcuity,
       targetFivePointAcuity: state!.currentFivePointAcuity,
@@ -167,20 +173,16 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
     );
 
     final updatedQuestions = [...state!.questions, questionRecord];
-    final reachedBestAcuityLimit = isCorrect &&
-        state!.staircaseState.currentLogMar <= state!.config.minLogMar + 1e-9 &&
-        state!.staircaseState.consecutiveCorrectCount + 1 >=
-            state!.config.requiredCorrectForStepDown;
 
-    final newStaircaseState = StaircaseEstimator.applyAnswer(
-      state: state!.staircaseState,
+    // 使用新版自适应行级引擎处理答题
+    final newLineProgressState = AdaptiveLineEngine.applyAnswer(
+      state: state!.lineProgressState,
       config: state!.config,
       isCorrect: isCorrect,
-      questionIndex: questionRecord.index,
     );
 
     final nextRenderMetrics = VisionMath.calculateRenderMetrics(
-      logMar: newStaircaseState.currentLogMar,
+      logMar: newLineProgressState.currentLogMar,
       testDistanceMm: state!.config.testDistanceMm,
       screenProfile: state!.screenProfile,
       minCriticalDetailPx: state!.config.minCriticalDetailPx,
@@ -190,11 +192,8 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
     SessionEndReason? endReason;
     bool isFinished = false;
 
-    if (newStaircaseState.thresholdReached) {
-      endReason = SessionEndReason.thresholdReached;
-      isFinished = true;
-    } else if (reachedBestAcuityLimit) {
-      endReason = SessionEndReason.bestAcuityReached;
+    if (newLineProgressState.protocolCompleted) {
+      endReason = SessionEndReason.protocolCompleted;
       isFinished = true;
     } else if (updatedQuestions.length >= state!.config.maxQuestionCount) {
       endReason = SessionEndReason.maxQuestionsReached;
@@ -206,7 +205,7 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
 
     if (isFinished) {
       state = state!.copyWith(
-        staircaseState: newStaircaseState,
+        lineProgressState: newLineProgressState,
         questions: updatedQuestions,
         isFinished: true,
         endReason: endReason,
@@ -219,7 +218,7 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
     final nextDirection = _generateRandomDirection();
 
     state = state!.copyWith(
-      staircaseState: newStaircaseState,
+      lineProgressState: newLineProgressState,
       questions: updatedQuestions,
       currentDirection: nextDirection,
       questionShownAt: DateTime.now(),
@@ -234,13 +233,13 @@ class TestSessionController extends StateNotifier<TestSessionState?> {
       throw StateError('测试会话不存在');
     }
 
-    return StaircaseEstimator.buildEyeTestResult(
+    return AdaptiveLineEngine.buildEyeTestResult(
       eyeSide: state!.config.eyeSide,
       testMode: state!.config.testMode,
       questions: state!.questions,
-      reversals: state!.staircaseState.reversals,
+      config: state!.config,
       pixelLimitEncountered: state!.pixelLimitEncountered,
-      minSamplesPerLevel: state!.config.requiredCorrectForStepDown,
+      finalState: state!.lineProgressState,
     );
   }
 

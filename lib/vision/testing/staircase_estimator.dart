@@ -2,6 +2,11 @@ import '../domain/vision_enums.dart';
 import '../domain/vision_models.dart';
 import '../math/vision_math.dart';
 
+/// 阶梯法估计器（已废弃）
+///
+/// 请使用 [AdaptiveLineEngine] 替代。
+/// 保留此类仅用于迁移期兼容。
+@Deprecated('请使用 AdaptiveLineEngine 替代')
 class StaircaseEstimator {
   const StaircaseEstimator._();
 
@@ -31,7 +36,12 @@ class StaircaseEstimator {
     int persistedCorrectCount = nextCorrectCount;
     int persistedWrongCount = nextWrongCount;
 
-    if (nextCorrectCount >= config.requiredCorrectForStepDown) {
+    // 使用硬编码默认值，废弃参数已从 TestConfig 移除
+    const requiredCorrectForStepDown = 3;
+    const allowedWrongForStepUp = 1;
+    const requiredReversalCount = 6;
+
+    if (nextCorrectCount >= requiredCorrectForStepDown) {
       stepDirection = StepDirection.down;
       nextLogMar = _clampLogMar(
         state.currentLogMar - config.stepLogMar,
@@ -39,7 +49,7 @@ class StaircaseEstimator {
       );
       persistedCorrectCount = 0;
       persistedWrongCount = 0;
-    } else if (nextWrongCount >= config.allowedWrongForStepUp) {
+    } else if (nextWrongCount >= allowedWrongForStepUp) {
       stepDirection = StepDirection.up;
       nextLogMar = _clampLogMar(
         state.currentLogMar + config.stepLogMar,
@@ -69,7 +79,7 @@ class StaircaseEstimator {
       consecutiveWrongCount: persistedWrongCount,
       lastStepDirection: stepDirection ?? state.lastStepDirection,
       reversals: reversals,
-      thresholdReached: reversals.length >= config.requiredReversalCount,
+      thresholdReached: reversals.length >= requiredReversalCount,
     );
   }
 
@@ -185,13 +195,17 @@ class StaircaseEstimator {
     return EyeTestResult(
       eyeSide: eyeSide,
       testMode: testMode,
-      estimatedLogMar: estimatedLogMar,
+      equivalentLogMar: estimatedLogMar,
       decimalAcuity: VisionMath.decimalFromLogMar(estimatedLogMar),
       fivePointAcuity: VisionMath.fivePointFromLogMar(estimatedLogMar),
+      etdrsLetterScore: correctQuestions + 30,
+      bestLineLogMar: confirmedLineLogMar ?? estimatedLogMar,
+      lineReversals: const [],
       totalQuestions: totalQuestions,
       correctQuestions: correctQuestions,
       accuracy: accuracy,
       meanResponseTimeMs: meanResponseTimeMs,
+      estimatedLogMar: estimatedLogMar,
       reversalStdDev: reversalStdDev,
       pixelLimitEncountered: pixelLimitEncountered,
       retestRecommended: reversalStdDev > 0.1,

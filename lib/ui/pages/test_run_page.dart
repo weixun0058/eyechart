@@ -297,7 +297,7 @@ class _TestRunPageState extends ConsumerState<TestRunPage> {
           ),
           _buildInfoChip(
             icon: Icons.swap_vert,
-            label: '${state.staircaseState.reversals.length} 反转',
+            label: '${state.lineProgressState.lineReversalCount} 反转',
             theme: theme,
           ),
         ],
